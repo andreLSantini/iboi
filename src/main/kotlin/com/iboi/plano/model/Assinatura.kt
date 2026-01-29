@@ -1,7 +1,8 @@
 package com.iboi.plano.model
 
-import com.iboi.tenant.Empresa
+import com.iboi.identity.domain.Empresa
 import jakarta.persistence.*
+import java.math.BigDecimal
 import java.time.LocalDateTime
 import java.util.*
 
@@ -9,15 +10,37 @@ import java.util.*
 @Table(name = "assinaturas")
 class Assinatura(
         @Id
-        val id: UUID = UUID.randomUUID(),
+        @GeneratedValue
+        val id: UUID? = null,
 
         @OneToOne
+        @JoinColumn(name = "empresa_id", nullable = false)
         val empresa: Empresa,
 
         @Enumerated(EnumType.STRING)
-        val tipo: TipoAssinatura,
+        @Column(nullable = false)
+        var tipo: TipoAssinatura,
 
-        val trialAte: LocalDateTime?,
+        @Enumerated(EnumType.STRING)
+        @Column(nullable = false)
+        var status: StatusAssinatura = StatusAssinatura.TRIAL,
 
-        val ativa: Boolean = true
+        @Enumerated(EnumType.STRING)
+        @Column(nullable = true)
+        var periodoPagamento: PeriodoPagamento? = null,
+
+        @Column(nullable = false)
+        val dataInicio: LocalDateTime = LocalDateTime.now(),
+
+        @Column(nullable = false)
+        var dataVencimento: LocalDateTime,
+
+        @Column(nullable = true)
+        var proximaCobranca: LocalDateTime? = null,
+
+        @Column(nullable = true, precision = 10, scale = 2)
+        var valor: BigDecimal? = null,
+
+        @Column(nullable = false)
+        val criadaEm: LocalDateTime = LocalDateTime.now()
 )

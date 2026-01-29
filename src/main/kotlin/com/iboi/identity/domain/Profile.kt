@@ -19,3 +19,4 @@ class Profile(
         )
         val permissions: Set<Permission> = emptySet()
 )
+

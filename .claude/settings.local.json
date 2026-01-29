@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm create:*)",
+      "Bash(npm install:*)",
+      "Bash(npx tailwindcss:*)",
+      "Bash(npm run dev:*)",
+      "Bash(timeout 3 cmd /c \"cd C:\\\\Users\\\\Andre\\\\Desktop\\\\iboi\\\\iboi\\\\frontend && type C:\\\\Users\\\\Andre\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-Andre-Desktop-iboi-iboi\\\\tasks\\\\b4487f5.output\")",
+      "Bash(npm uninstall:*)",
+      "Bash(.gradlew.bat clean build -x test)",
+      "Bash(./gradlew clean build:*)",
+      "Bash(find:*)"
+    ]
+  }
+}
