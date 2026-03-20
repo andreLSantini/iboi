@@ -40,7 +40,12 @@ class PagamentoController(
                     dataPagamento = pagamento.dataPagamento,
                     status = pagamento.status,
                     metodoPagamento = pagamento.metodoPagamento,
-                    transacaoId = pagamento.transacaoId
+                    transacaoId = pagamento.transacaoId,
+                    gatewayProvider = pagamento.gatewayProvider,
+                    invoiceUrl = pagamento.invoiceUrl,
+                    bankSlipUrl = pagamento.bankSlipUrl,
+                    pixPayload = pagamento.pixPayload,
+                    pixEncodedImage = pagamento.pixEncodedImage
             )
         }
 

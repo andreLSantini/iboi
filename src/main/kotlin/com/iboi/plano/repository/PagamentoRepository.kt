@@ -7,4 +7,5 @@ import java.util.*
 interface PagamentoRepository : JpaRepository<Pagamento, UUID> {
     fun findByAssinaturaIdOrderByDataVencimentoDesc(assinaturaId: UUID): List<Pagamento>
     fun findByAssinaturaEmpresaIdOrderByDataVencimentoDesc(empresaId: UUID): List<Pagamento>
+    fun findByTransacaoId(transacaoId: String): Pagamento?
 }

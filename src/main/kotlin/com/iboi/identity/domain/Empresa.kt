@@ -25,6 +25,9 @@ class Empresa(
         @Column(name = "empresa_matriz_id")
         var empresaMatrizId: UUID? = null,
 
+        @Column(name = "asaas_customer_id")
+        var asaasCustomerId: String? = null,
+
         var ativa: Boolean = true,
 
         val criadaEm: LocalDateTime = LocalDateTime.now()

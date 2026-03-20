@@ -25,3 +25,10 @@ spring:
       resource-server:
         jwt:
           issuer-uri: http://localhost:8080/realms/app
+
+asaas:
+  enabled: false
+  base-url: https://api-sandbox.asaas.com
+  api-key: ""
+  webhook-token: ""
+  user-agent: iboi-billing

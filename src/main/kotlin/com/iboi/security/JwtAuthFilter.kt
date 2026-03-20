@@ -20,6 +20,7 @@ class JwtAuthFilter(
         val path = request.servletPath
         return path.startsWith("/auth/")
                 || path.startsWith("/onboarding")
+                || path.startsWith("/webhooks/asaas")
                 || path.startsWith("/v3/api-docs")
                 || path.startsWith("/swagger-ui")
     }

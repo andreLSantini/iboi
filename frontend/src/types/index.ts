@@ -74,6 +74,11 @@ export interface HistoricoPagamento {
   status: string;
   metodoPagamento?: MetodoPagamento;
   transacaoId?: string;
+  gatewayProvider?: string;
+  invoiceUrl?: string;
+  bankSlipUrl?: string;
+  pixPayload?: string;
+  pixEncodedImage?: string;
 }
 
 export type Sexo = 'MACHO' | 'FEMEA';

@@ -36,6 +36,22 @@ class Pagamento(
         @Column(nullable = true)
         var transacaoId: String? = null,
 
+        @Column(nullable = true)
+        var gatewayProvider: String? = null,
+
+        @Column(nullable = true, length = 500)
+        var invoiceUrl: String? = null,
+
+        @Column(nullable = true, length = 500)
+        var bankSlipUrl: String? = null,
+
+        @Column(nullable = true, length = 4000)
+        var pixPayload: String? = null,
+
+        @Lob
+        @Column(nullable = true)
+        var pixEncodedImage: String? = null,
+
         @Column(nullable = false)
         val criadoEm: LocalDateTime = LocalDateTime.now()
 )

@@ -4,22 +4,18 @@ import com.iboi.plano.api.dto.PagamentoDto
 import com.iboi.plano.api.dto.ProcessarPagamentoRequest
 import com.iboi.plano.api.dto.ProcessarPagamentoResponse
 import com.iboi.plano.model.Pagamento
-import com.iboi.plano.model.StatusAssinatura
 import com.iboi.plano.model.StatusPagamento
 import com.iboi.plano.repository.AssinaturaRepository
 import com.iboi.plano.repository.PagamentoRepository
-import com.iboi.plano.service.AssinaturaService
 import com.iboi.plano.service.BillingGateway
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
-import java.time.LocalDateTime
 import java.util.UUID
 
 @Component
 class ProcessarPagamentoUseCase(
         private val assinaturaRepository: AssinaturaRepository,
         private val pagamentoRepository: PagamentoRepository,
-        private val assinaturaService: AssinaturaService,
         private val billingGateway: BillingGateway
 ) {
 
@@ -31,54 +27,53 @@ class ProcessarPagamentoUseCase(
         val valor = assinatura.valor
                 ?: throw IllegalStateException("Assinatura nao possui valor definido")
 
-        val periodoPagamento = assinatura.periodoPagamento
-                ?: throw IllegalStateException("Assinatura nao possui periodo de pagamento definido")
+        val dueDate = assinatura.dataVencimento.toLocalDate()
+        val description = "Plano ${assinatura.tipo.name} - ${assinatura.periodoPagamento?.name ?: "MENSAL"}"
 
-        val gatewayResult = billingGateway.capturePayment(
-                empresaId = empresaId,
+        val charge = billingGateway.createCharge(
+                empresa = assinatura.empresa,
                 valor = valor,
                 metodoPagamento = request.metodoPagamento,
-                externalTransactionId = request.transacaoId
+                dueDate = dueDate,
+                description = description
         )
-
-        if (!gatewayResult.success) {
-            throw IllegalStateException("Nao foi possivel confirmar o pagamento no gateway")
-        }
 
         val pagamento = pagamentoRepository.save(
                 Pagamento(
                         assinatura = assinatura,
                         valor = valor,
                         dataVencimento = assinatura.dataVencimento,
-                        dataPagamento = LocalDateTime.now(),
-                        status = StatusPagamento.PAGO,
+                        status = if (charge.success) StatusPagamento.PENDENTE else StatusPagamento.CANCELADO,
                         metodoPagamento = request.metodoPagamento,
-                        transacaoId = gatewayResult.transactionId
+                        transacaoId = charge.transactionId,
+                        gatewayProvider = charge.provider,
+                        invoiceUrl = charge.invoiceUrl,
+                        bankSlipUrl = charge.bankSlipUrl,
+                        pixPayload = charge.pixPayload,
+                        pixEncodedImage = charge.pixEncodedImage
                 )
         )
 
-        val agora = LocalDateTime.now()
-        val novaDataVencimento = assinaturaService.calcularProximaCobranca(agora, periodoPagamento)
-
-        assinatura.status = StatusAssinatura.ATIVA
-        assinatura.dataVencimento = novaDataVencimento
-        assinatura.proximaCobranca = novaDataVencimento
-
-        assinaturaRepository.save(assinatura)
-
         return ProcessarPagamentoResponse(
-                sucesso = true,
-                mensagem = "Pagamento processado com sucesso!",
-                pagamento = PagamentoDto(
-                        id = pagamento.id!!,
-                        valor = pagamento.valor,
-                        dataVencimento = pagamento.dataVencimento,
-                        dataPagamento = pagamento.dataPagamento,
-                        status = pagamento.status,
-                        metodoPagamento = pagamento.metodoPagamento,
-                        transacaoId = pagamento.transacaoId
-                ),
-                novaDataVencimento = novaDataVencimento
+                sucesso = charge.success,
+                mensagem = "Cobranca criada com sucesso. Conclua o pagamento no Asaas para ativar o plano.",
+                pagamento = pagamento.toDto(),
+                novaDataVencimento = assinatura.proximaCobranca
         )
     }
+
+    private fun Pagamento.toDto() = PagamentoDto(
+            id = id!!,
+            valor = valor,
+            dataVencimento = dataVencimento,
+            dataPagamento = dataPagamento,
+            status = status,
+            metodoPagamento = metodoPagamento,
+            transacaoId = transacaoId,
+            gatewayProvider = gatewayProvider,
+            invoiceUrl = invoiceUrl,
+            bankSlipUrl = bankSlipUrl,
+            pixPayload = pixPayload,
+            pixEncodedImage = pixEncodedImage
+    )
 }

@@ -18,7 +18,12 @@ data class PagamentoDto(
         val dataPagamento: LocalDateTime?,
         val status: StatusPagamento,
         val metodoPagamento: MetodoPagamento?,
-        val transacaoId: String?
+        val transacaoId: String?,
+        val gatewayProvider: String?,
+        val invoiceUrl: String?,
+        val bankSlipUrl: String?,
+        val pixPayload: String?,
+        val pixEncodedImage: String?
 )
 
 data class ProcessarPagamentoResponse(

@@ -32,6 +32,7 @@ class SecurityConfig(
                     it.requestMatchers(
                             "/auth/**",
                             "/onboarding",
+                            "/webhooks/asaas",
                             "/v3/api-docs/**",
                             "/swagger-ui/**",
                             "/swagger-ui.html"
@@ -50,16 +51,11 @@ class SecurityConfig(
     @Bean
     fun corsConfigurationSource(): CorsConfigurationSource {
         val config = CorsConfiguration()
-        config.allowedOrigins = listOf(
-                "http://localhost:5173",
-                "http://localhost:5174",
-                "http://localhost:5175",
-                "http://localhost:5176",
-                "http://localhost:5177",
-                "http://localhost:5178",
-                "http://localhost:5179",
-                "http://localhost:5180",
-                "http://localhost:3000"
+        config.allowedOriginPatterns = listOf(
+                "http://localhost:*",
+                "http://127.0.0.1:*",
+                "http://192.168.*:*",
+                "http://10.*:*"
         )
         config.allowedMethods = listOf(
                 "GET", "POST", "PUT", "DELETE", "OPTIONS"
