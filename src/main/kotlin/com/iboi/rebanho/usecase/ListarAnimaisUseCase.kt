@@ -6,6 +6,8 @@ import com.iboi.rebanho.api.dto.FiltrarAnimaisRequest
 import com.iboi.rebanho.api.dto.LoteResumoDto
 import com.iboi.rebanho.domain.Animal
 import com.iboi.rebanho.repository.AnimalRepository
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Component
 import java.time.Period
 import java.util.*
@@ -15,24 +17,15 @@ class ListarAnimaisUseCase(
         private val animalRepository: AnimalRepository
 ) {
 
-    fun execute(farmId: UUID, filtro: FiltrarAnimaisRequest?): List<AnimalDto> {
-        var animais = animalRepository.findByFarmId(farmId)
-
-        // Aplicar filtros
-        filtro?.let {
-            if (it.status != null) {
-                animais = animais.filter { animal -> animal.status == it.status }
-            }
-            if (it.categoria != null) {
-                animais = animais.filter { animal -> animal.categoria == it.categoria }
-            }
-            if (it.loteId != null) {
-                animais = animais.filter { animal -> animal.lote?.id == it.loteId }
-            }
-            if (it.sexo != null) {
-                animais = animais.filter { animal -> animal.sexo == it.sexo }
-            }
-        }
+    fun execute(farmId: UUID, filtro: FiltrarAnimaisRequest?, pageable: Pageable): Page<AnimalDto> {
+        val animais = animalRepository.findByFarmIdWithFilters(
+                farmId = farmId,
+                status = filtro?.status,
+                categoria = filtro?.categoria,
+                loteId = filtro?.loteId,
+                sexo = filtro?.sexo,
+                pageable = pageable
+        )
 
         return animais.map { toDto(it) }
     }

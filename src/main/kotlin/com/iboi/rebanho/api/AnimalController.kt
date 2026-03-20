@@ -1,135 +1,100 @@
 package com.iboi.rebanho.api
 
-import com.iboi.identity.infrastructure.repository.UsuarioRepository
-import com.iboi.identity.infrastructure.repository.UserFarmProfileRepository
-import com.iboi.rebanho.api.dto.*
+import com.iboi.rebanho.api.dto.AnimalDto
+import com.iboi.rebanho.api.dto.AtualizarAnimalRequest
+import com.iboi.rebanho.api.dto.CadastrarAnimalRequest
+import com.iboi.rebanho.api.dto.FiltrarAnimaisRequest
+import com.iboi.rebanho.domain.CategoriaAnimal
+import com.iboi.rebanho.domain.Sexo
 import com.iboi.rebanho.domain.StatusAnimal
-import com.iboi.rebanho.repository.AnimalRepository
+import com.iboi.rebanho.usecase.AtualizarAnimalUseCase
+import com.iboi.rebanho.usecase.BuscarAnimalPorIdUseCase
 import com.iboi.rebanho.usecase.CadastrarAnimalUseCase
+import com.iboi.rebanho.usecase.DeletarAnimalUseCase
 import com.iboi.rebanho.usecase.ListarAnimaisUseCase
+import com.iboi.shared.security.SecurityUtils
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.responses.ApiResponses
+import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.validation.Valid
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Sort
+import org.springframework.data.web.PageableDefault
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
-import org.springframework.security.core.context.SecurityContextHolder
-import org.springframework.web.bind.annotation.*
-import java.time.Period
-import java.util.*
+import org.springframework.web.bind.annotation.DeleteMapping
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.RestController
+import java.util.UUID
 
 @RestController
 @RequestMapping("/api/animais")
+@Tag(name = "Animais", description = "Gestao do rebanho")
 class AnimalController(
-        private val animalRepository: AnimalRepository,
-        private val usuarioRepository: UsuarioRepository,
-        private val userFarmProfileRepository: UserFarmProfileRepository,
         private val cadastrarAnimalUseCase: CadastrarAnimalUseCase,
-        private val listarAnimaisUseCase: ListarAnimaisUseCase
+        private val listarAnimaisUseCase: ListarAnimaisUseCase,
+        private val buscarAnimalPorIdUseCase: BuscarAnimalPorIdUseCase,
+        private val atualizarAnimalUseCase: AtualizarAnimalUseCase,
+        private val deletarAnimalUseCase: DeletarAnimalUseCase
 ) {
 
     @PostMapping
-    fun cadastrar(@RequestBody request: CadastrarAnimalRequest): ResponseEntity<AnimalDto> {
-        val farmId = getFarmIdFromAuth()
-        val animal = cadastrarAnimalUseCase.execute(farmId, request)
+    @Operation(summary = "Cadastrar animal", description = "Cadastra um novo animal no rebanho")
+    @ApiResponses(
+            value = [
+                ApiResponse(responseCode = "201", description = "Animal cadastrado com sucesso"),
+                ApiResponse(responseCode = "409", description = "Brinco ja existe"),
+                ApiResponse(responseCode = "400", description = "Dados invalidos")
+            ]
+    )
+    fun cadastrar(@Valid @RequestBody request: CadastrarAnimalRequest): ResponseEntity<AnimalDto> {
+        val animal = cadastrarAnimalUseCase.execute(SecurityUtils.currentFarmId(), request)
         return ResponseEntity.status(HttpStatus.CREATED).body(animal)
     }
 
     @GetMapping
+    @Operation(summary = "Listar animais", description = "Lista animais com filtros e paginacao")
     fun listar(
             @RequestParam(required = false) status: StatusAnimal?,
-            @RequestParam(required = false) categoria: com.iboi.rebanho.domain.CategoriaAnimal?,
+            @RequestParam(required = false) categoria: CategoriaAnimal?,
             @RequestParam(required = false) loteId: UUID?,
-            @RequestParam(required = false) sexo: com.iboi.rebanho.domain.Sexo?
-    ): ResponseEntity<List<AnimalDto>> {
-        val farmId = getFarmIdFromAuth()
+            @RequestParam(required = false) sexo: Sexo?,
+            @PageableDefault(size = 20, sort = ["criadoEm"], direction = Sort.Direction.DESC) pageable: Pageable
+    ): ResponseEntity<Page<AnimalDto>> {
         val filtro = FiltrarAnimaisRequest(status, categoria, loteId, sexo)
-        val animais = listarAnimaisUseCase.execute(farmId, filtro)
+        val animais = listarAnimaisUseCase.execute(SecurityUtils.currentFarmId(), filtro, pageable)
         return ResponseEntity.ok(animais)
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "Buscar animal por ID", description = "Retorna detalhes de um animal especifico")
     fun buscarPorId(@PathVariable id: UUID): ResponseEntity<AnimalDto> {
-        val farmId = getFarmIdFromAuth()
-        val animal = animalRepository.findById(id).orElse(null) ?: return ResponseEntity.notFound().build()
-
-        if (animal.farm.id != farmId) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build()
-        }
-
-        return ResponseEntity.ok(toDto(animal))
+        val animal = buscarAnimalPorIdUseCase.execute(id, SecurityUtils.currentFarmId())
+        return ResponseEntity.ok(animal)
     }
 
     @PutMapping("/{id}")
+    @Operation(summary = "Atualizar animal", description = "Atualiza dados de um animal")
     fun atualizar(
             @PathVariable id: UUID,
-            @RequestBody request: AtualizarAnimalRequest
+            @Valid @RequestBody request: AtualizarAnimalRequest
     ): ResponseEntity<AnimalDto> {
-        val farmId = getFarmIdFromAuth()
-        val animal = animalRepository.findById(id).orElse(null) ?: return ResponseEntity.notFound().build()
-
-        if (animal.farm.id != farmId) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build()
-        }
-
-        request.nome?.let { animal.nome = it }
-        request.raca?.let { animal.raca = it }
-        request.pesoAtual?.let { animal.pesoAtual = it }
-        request.categoria?.let { animal.categoria = it }
-        request.status?.let { animal.status = it }
-        request.observacoes?.let { animal.observacoes = it }
-        animal.atualizadoEm = java.time.LocalDateTime.now()
-
-        val atualizado = animalRepository.save(animal)
-        return ResponseEntity.ok(toDto(atualizado))
+        val animal = atualizarAnimalUseCase.execute(id, SecurityUtils.currentFarmId(), request)
+        return ResponseEntity.ok(animal)
     }
 
     @DeleteMapping("/{id}")
+    @Operation(summary = "Deletar animal", description = "Remove um animal do rebanho (soft delete)")
     fun deletar(@PathVariable id: UUID): ResponseEntity<Void> {
-        val farmId = getFarmIdFromAuth()
-        val animal = animalRepository.findById(id).orElse(null) ?: return ResponseEntity.notFound().build()
-
-        if (animal.farm.id != farmId) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build()
-        }
-
-        animalRepository.delete(animal)
+        deletarAnimalUseCase.execute(id, SecurityUtils.currentFarmId())
         return ResponseEntity.noContent().build()
-    }
-
-    private fun getFarmIdFromAuth(): UUID {
-        val email = SecurityContextHolder.getContext().authentication.principal as String
-        val usuario = usuarioRepository.findByEmail(email)
-                ?: throw IllegalStateException("Usuário não encontrado")
-
-        // Buscar o perfil default do usuário
-        val userFarmProfile = userFarmProfileRepository.findByUsuario_IdAndIsDefaultTrue(usuario.id!!)
-                ?: userFarmProfileRepository.findByUsuario_Id(usuario.id!!)
-                ?: throw IllegalStateException("Usuário não possui fazenda associada")
-
-        return userFarmProfile.farm.id!!
-    }
-
-    private fun toDto(animal: com.iboi.rebanho.domain.Animal): AnimalDto {
-        val idade = Period.between(animal.dataNascimento, java.time.LocalDate.now()).toTotalMonths().toInt()
-
-        return AnimalDto(
-                id = animal.id!!,
-                brinco = animal.brinco,
-                nome = animal.nome,
-                sexo = animal.sexo,
-                raca = animal.raca,
-                dataNascimento = animal.dataNascimento,
-                idade = idade,
-                pesoAtual = animal.pesoAtual,
-                status = animal.status,
-                categoria = animal.categoria,
-                lote = animal.lote?.let {
-                    LoteResumoDto(it.id!!, it.nome)
-                },
-                pai = animal.pai?.let {
-                    AnimalResumoDto(it.id!!, it.brinco, it.nome)
-                },
-                mae = animal.mae?.let {
-                    AnimalResumoDto(it.id!!, it.brinco, it.nome)
-                },
-                observacoes = animal.observacoes
-        )
     }
 }

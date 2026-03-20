@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogIn, Loader2 } from 'lucide-react';
+import { Loader2, LogIn } from 'lucide-react';
 import api from '../services/api';
-import type { LoginRequest, LoginResponse } from '../types/index';
+import { storeAuthSession } from '../services/session';
+import type { LoginRequest, LoginResponse } from '../types';
+import logo from '../assets/logo_transparente.png';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -19,11 +21,8 @@ export default function Login() {
     try {
       const request: LoginRequest = { email, senha };
       const response = await api.post<LoginResponse>('/auth/login', request);
-
-      localStorage.setItem('token', response.data.accessToken);
-      localStorage.setItem('user', JSON.stringify(response.data.usuario));
-
-      navigate('/dashboard');
+      storeAuthSession(response.data);
+      navigate('/app/dashboard');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Erro ao fazer login. Verifique suas credenciais.');
     } finally {
@@ -34,30 +33,25 @@ export default function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-primary-100">
       <div className="w-full max-w-md">
-        {/* Logo e Título */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-600 rounded-2xl mb-4">
-            <span className="text-3xl">🐂</span>
+          <div className="inline-flex items-center justify-center mb-4">
+            <img src={logo} alt="Logo" className="w-48 h-48 object-contain" />
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">iBoi</h1>
-          <p className="text-gray-600">Gestão Inteligente de Gado</p>
+          <p className="text-lg text-gray-600 font-medium">Gestao inteligente de gado</p>
         </div>
 
-        {/* Card de Login */}
         <div className="card">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Entrar</h2>
 
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
               {error}
             </div>
           )}
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                E-mail
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">E-mail</label>
               <input
                 type="email"
                 value={email}
@@ -69,9 +63,7 @@ export default function Login() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Senha
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Senha</label>
               <input
                 type="password"
                 value={senha}
@@ -103,17 +95,15 @@ export default function Login() {
 
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
-              Não tem uma conta?{' '}
+              Nao tem uma conta?{' '}
               <button
                 onClick={() => navigate('/onboarding')}
                 className="text-primary-600 hover:text-primary-700 font-medium"
               >
-                Cadastre-se grátis
+                Cadastre-se gratis
               </button>
             </p>
-            <p className="text-xs text-gray-500 mt-2">
-              🎉 30 dias de trial gratuito!
-            </p>
+            <p className="text-xs text-gray-500 mt-2">30 dias de trial gratuito.</p>
           </div>
         </div>
       </div>

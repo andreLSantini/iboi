@@ -6,6 +6,7 @@ import io.jsonwebtoken.security.Keys
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import java.util.*
+import java.util.UUID
 
 @Service
 class JwtService(
@@ -17,13 +18,15 @@ class JwtService(
         private val expiration: Long
 ) {
 
-    fun generateToken(user: Usuario,permissions: List<String>): String {
+    fun generateToken(user: Usuario, permissions: List<String>, defaultFarmId: UUID? = null): String {
         return Jwts.builder()
                 .setSubject(user.id.toString())
+                .claim("email", user.email)
                 .claim("empresaId", user.empresa.id.toString())
                 .claim("role", user.roleEnum.name)
                 .claim("userId", user.id.toString())
                 .claim("tenantId", user.empresa.id.toString())
+                .claim("farmId", defaultFarmId?.toString())
                 .claim("permissions", permissions)
                 .setIssuedAt(Date())
                 .setExpiration(Date(System.currentTimeMillis() + expiration))

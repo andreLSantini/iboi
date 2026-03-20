@@ -3,13 +3,16 @@ package com.iboi.plano.api
 import com.iboi.plano.api.dto.AssinaturaDto
 import com.iboi.plano.api.dto.CancelarAssinaturaRequest
 import com.iboi.plano.api.dto.UpgradeRequest
-import com.iboi.identity.infrastructure.repository.UsuarioRepository
 import com.iboi.plano.repository.AssinaturaRepository
 import com.iboi.plano.usecase.CancelarAssinaturaUseCase
 import com.iboi.plano.usecase.UpgradeAssinaturaUseCase
+import com.iboi.shared.security.SecurityUtils
 import org.springframework.http.ResponseEntity
-import org.springframework.security.core.context.SecurityContextHolder
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RestController
 import java.time.Duration
 import java.time.LocalDateTime
 
@@ -17,15 +20,13 @@ import java.time.LocalDateTime
 @RequestMapping("/api/assinatura")
 class AssinaturaController(
         private val assinaturaRepository: AssinaturaRepository,
-        private val usuarioRepository: UsuarioRepository,
         private val upgradeAssinaturaUseCase: UpgradeAssinaturaUseCase,
         private val cancelarAssinaturaUseCase: CancelarAssinaturaUseCase
 ) {
 
     @GetMapping("/minha")
     fun getMinhaAssinatura(): ResponseEntity<AssinaturaDto> {
-        val empresaId = getEmpresaIdFromAuth()
-        val assinatura = assinaturaRepository.findByEmpresaId(empresaId)
+        val assinatura = assinaturaRepository.findByEmpresaId(SecurityUtils.currentEmpresaId())
                 ?: return ResponseEntity.notFound().build()
 
         val agora = LocalDateTime.now()
@@ -48,9 +49,7 @@ class AssinaturaController(
 
     @PostMapping("/upgrade")
     fun upgrade(@RequestBody request: UpgradeRequest): ResponseEntity<Map<String, String>> {
-        val empresaId = getEmpresaIdFromAuth()
-        upgradeAssinaturaUseCase.execute(empresaId, request)
-
+        upgradeAssinaturaUseCase.execute(SecurityUtils.currentEmpresaId(), request)
         return ResponseEntity.ok(
                 mapOf("mensagem" to "Upgrade realizado com sucesso! Realize o pagamento para ativar o plano.")
         )
@@ -58,18 +57,7 @@ class AssinaturaController(
 
     @PostMapping("/cancelar")
     fun cancelar(@RequestBody request: CancelarAssinaturaRequest): ResponseEntity<Map<String, String>> {
-        val empresaId = getEmpresaIdFromAuth()
-        cancelarAssinaturaUseCase.execute(empresaId, request.motivo)
-
-        return ResponseEntity.ok(
-                mapOf("mensagem" to "Assinatura cancelada com sucesso.")
-        )
-    }
-
-    private fun getEmpresaIdFromAuth(): java.util.UUID {
-        val email = SecurityContextHolder.getContext().authentication.principal as String
-        val usuario = usuarioRepository.findByEmail(email)
-                ?: throw IllegalStateException("Usuário não encontrado")
-        return usuario.empresa.id!!
+        cancelarAssinaturaUseCase.execute(SecurityUtils.currentEmpresaId(), request.motivo)
+        return ResponseEntity.ok(mapOf("mensagem" to "Assinatura cancelada com sucesso."))
     }
 }

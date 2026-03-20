@@ -1,9 +1,24 @@
 import { useNavigate } from 'react-router-dom';
 import { LogOut, Home } from 'lucide-react';
+import logo from '../assets/logo_transparente.png';
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+  const getUserFromStorage = () => {
+    try {
+      const userStr = localStorage.getItem('user');
+      if (!userStr || userStr === 'undefined' || userStr === 'null') {
+        return {};
+      }
+      return JSON.parse(userStr);
+    } catch (error) {
+      console.error('Error parsing user from localStorage:', error);
+      return {};
+    }
+  };
+
+  const user = getUserFromStorage();
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -18,12 +33,9 @@ export default function Dashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-primary-600 rounded-lg flex items-center justify-center">
-                <span className="text-2xl">🐂</span>
-              </div>
+              <img src={logo} alt="iBoi Logo" className="h-16 w-auto object-contain" />
               <div>
-                <h1 className="text-xl font-bold text-gray-900">iBoi</h1>
-                <p className="text-sm text-gray-500">Gestão Inteligente de Gado</p>
+                <p className="text-sm text-gray-600 font-medium">Gestão Inteligente de Gado</p>
               </div>
             </div>
 

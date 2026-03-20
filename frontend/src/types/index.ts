@@ -9,25 +9,36 @@ export interface OnboardingRequest {
   nomeFazenda: string;
   cidade: string;
   estado: string;
-  tipoProdução: 'CORTE' | 'LEITE' | 'MISTO';
+  'tipoProdu\u00E7\u00E3o': 'CORTE' | 'LEITE' | 'MISTO';
   tamanho?: number;
 }
 
-export interface OnboardingResponse {
+export interface UserSession {
+  id: string;
+  nome: string;
+  email: string;
+  role: string;
+  farmRole: string;
+}
+
+export interface FarmSession {
+  id: string;
+  nome: string;
+  cidade: string;
+  estado: string;
+}
+
+export interface FarmSummary {
+  id: string;
+  name: string;
+}
+
+export interface AuthResponse {
   accessToken: string;
-  usuario: {
-    id: string;
-    nome: string;
-    email: string;
-    role: string;
-    farmRole: string;
-  };
-  fazenda: {
-    id: string;
-    nome: string;
-    cidade: string;
-    estado: string;
-  };
+  usuario: UserSession;
+  fazenda: FarmSession;
+  farms: FarmSummary[];
+  defaultFarmId: string;
 }
 
 export interface LoginRequest {
@@ -35,28 +46,39 @@ export interface LoginRequest {
   senha: string;
 }
 
-export interface LoginResponse {
-  accessToken: string;
-  usuario: {
-    id: string;
-    nome: string;
-    email: string;
-  };
+export type LoginResponse = AuthResponse;
+export type OnboardingResponse = AuthResponse;
+
+export type TipoAssinatura = 'TRIAL' | 'BASIC' | 'PRO' | 'ENTERPRISE';
+export type StatusAssinatura = 'TRIAL' | 'ATIVA' | 'VENCIDA' | 'CANCELADA' | 'SUSPENSA';
+export type PeriodoPagamento = 'MENSAL' | 'SEMESTRAL' | 'ANUAL';
+export type MetodoPagamento = 'CARTAO_CREDITO' | 'BOLETO' | 'PIX' | 'TRANSFERENCIA';
+
+export interface AssinaturaDto {
+  id: string;
+  tipo: TipoAssinatura;
+  status: StatusAssinatura;
+  periodoPagamento?: PeriodoPagamento;
+  dataInicio: string;
+  dataVencimento: string;
+  proximaCobranca?: string;
+  valor?: number;
+  diasRestantes: number;
 }
 
-// ============= ANIMAIS =============
+export interface HistoricoPagamento {
+  id: string;
+  valor: number;
+  dataVencimento: string;
+  dataPagamento?: string;
+  status: string;
+  metodoPagamento?: MetodoPagamento;
+  transacaoId?: string;
+}
+
 export type Sexo = 'MACHO' | 'FEMEA';
-
 export type StatusAnimal = 'ATIVO' | 'VENDIDO' | 'MORTO' | 'DESCARTADO' | 'TRANSFERIDO';
-
-export type CategoriaAnimal =
-  | 'BEZERRO'
-  | 'NOVILHO'
-  | 'NOVILHA'
-  | 'BOI'
-  | 'VACA'
-  | 'TOURO'
-  | 'MATRIZ';
+export type CategoriaAnimal = 'BEZERRO' | 'NOVILHO' | 'NOVILHA' | 'BOI' | 'VACA' | 'TOURO' | 'MATRIZ';
 
 export type Raca =
   | 'NELORE'
@@ -66,7 +88,7 @@ export type Raca =
   | 'GUZERA'
   | 'TABAPUA'
   | 'SENEPOL'
-  | 'CHAROLÊS'
+  | 'CHAROL\u00CAS'
   | 'LIMOUSIN'
   | 'HEREFORD'
   | 'SIMENTAL'
@@ -126,7 +148,6 @@ export interface AtualizarAnimalRequest {
   observacoes?: string;
 }
 
-// ============= EVENTOS =============
 export type TipoEvento =
   | 'VACINA'
   | 'VERMIFUGO'
@@ -178,4 +199,32 @@ export interface RegistrarEventoRequest {
   unidadeMedida?: string;
   loteDestinoId?: string;
   valor?: number;
+}
+
+export interface LoteDto {
+  id: string;
+  nome: string;
+  descricao?: string;
+  ativo: boolean;
+  quantidadeAnimais: number;
+  criadoEm: string;
+}
+
+export interface CadastrarLoteRequest {
+  nome: string;
+  descricao?: string;
+}
+
+export interface AtualizarLoteRequest {
+  nome?: string;
+  descricao?: string;
+  ativo?: boolean;
+}
+
+export interface PageResponse<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  number: number;
+  size: number;
 }

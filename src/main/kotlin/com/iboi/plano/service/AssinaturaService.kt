@@ -16,6 +16,7 @@ class AssinaturaService(
     fun isAssinaturaAtiva(empresaId: UUID): Boolean {
         val assinatura = assinaturaRepository.findByEmpresaId(empresaId)
                 ?: return false
+        verificarEAtualizarStatus(assinatura)
 
         return when (assinatura.status) {
             StatusAssinatura.TRIAL -> {

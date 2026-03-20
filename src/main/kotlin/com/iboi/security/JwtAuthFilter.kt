@@ -33,22 +33,36 @@ class JwtAuthFilter(
         val authHeader = request.getHeader("Authorization")
 
         if (authHeader?.startsWith("Bearer ") == true) {
-            val token = authHeader.substring(7)
-            val claims = jwtService.extractClaims(token)
+            try {
+                val token = authHeader.substring(7)
+                val claims = jwtService.extractClaims(token)
 
-            val tenantId = UUID.fromString(claims["tenantId"].toString())
-            TenantContext.set(tenantId.toString())
+                val tenantId = UUID.fromString(claims["tenantId"].toString())
+                TenantContext.set(tenantId.toString())
 
-            val permissions = (claims["permissions"] as List<*>)
-                    .map { SimpleGrantedAuthority(it.toString()) }
+                val permissions = (claims["permissions"] as List<*>)
+                        .map { SimpleGrantedAuthority(it.toString()) }
 
-            val authentication = UsernamePasswordAuthenticationToken(
-                    claims.subject,
-                    null,
-                    permissions
-            )
+                val principal = AuthenticatedUser(
+                        userId = UUID.fromString(claims["userId"].toString()),
+                        email = claims["email"].toString(),
+                        empresaId = UUID.fromString(claims["empresaId"].toString()),
+                        farmId = claims["farmId"]?.toString()
+                                ?.takeIf { it.isNotBlank() && it != "null" }
+                                ?.let(UUID::fromString)
+                )
 
-            SecurityContextHolder.getContext().authentication = authentication
+                val authentication = UsernamePasswordAuthenticationToken(
+                        principal,
+                        null,
+                        permissions
+                )
+
+                SecurityContextHolder.getContext().authentication = authentication
+            } catch (e: Exception) {
+                logger.error("Erro ao processar token JWT: ${e.message}", e)
+                // Token inválido - deixa sem autenticação para retornar 401/403
+            }
         }
 
         try {

@@ -9,7 +9,11 @@
       "Bash(npm uninstall:*)",
       "Bash(.gradlew.bat clean build -x test)",
       "Bash(./gradlew clean build:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(./gradlew build:*)",
+      "Bash(npm run build:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(docker compose:*)"
     ]
   }
 }

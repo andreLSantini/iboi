@@ -1,106 +1,98 @@
 import { useState } from 'react';
-import { useNavigate, useLocation, Outlet } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
-  Home,
+  Activity,
+  AlertCircle,
+  BarChart3,
   Beef,
   Calendar,
-  Activity,
+  CreditCard,
   DollarSign,
-  BarChart3,
-  Users,
-  AlertCircle,
-  Settings,
+  Home,
   LogOut,
   Menu,
-  X
+  Package,
+  Settings,
+  Users,
+  X,
 } from 'lucide-react';
+import logo from '../assets/logo_transparente.png';
+import { clearSession, getUser } from '../services/session';
 
 export default function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const user = getUser();
+
+  const menuItems = [
+    { icon: Home, label: 'Dashboard', path: '/app/dashboard' },
+    { icon: Beef, label: 'Animais', path: '/app/animais' },
+    { icon: Package, label: 'Lotes', path: '/app/lotes' },
+    { icon: Activity, label: 'Eventos', path: '/app/eventos' },
+    { icon: Calendar, label: 'Calendario', path: '/app/calendario' },
+    { icon: DollarSign, label: 'Despesas', path: '/app/despesas' },
+    { icon: BarChart3, label: 'Relatorios', path: '/app/relatorios' },
+    { icon: AlertCircle, label: 'Alertas IA', path: '/app/alertas' },
+    { icon: Users, label: 'Veterinarios', path: '/app/veterinarios' },
+    { icon: CreditCard, label: 'Assinatura', path: '/app/assinatura' },
+    { icon: Settings, label: 'Configuracoes', path: '/app/configuracoes' },
+  ];
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    clearSession();
     navigate('/login');
   };
 
-  const menuItems = [
-    { icon: Home, label: 'Dashboard', path: '/dashboard' },
-    { icon: Beef, label: 'Animais', path: '/animais' },
-    { icon: Activity, label: 'Eventos', path: '/eventos' },
-    { icon: Calendar, label: 'Calendário Sanitário', path: '/calendario' },
-    { icon: DollarSign, label: 'Despesas', path: '/despesas' },
-    { icon: BarChart3, label: 'Relatórios', path: '/relatorios' },
-    { icon: AlertCircle, label: 'Alertas IA', path: '/alertas' },
-    { icon: Users, label: 'Veterinários', path: '/veterinarios' },
-    { icon: Settings, label: 'Configurações', path: '/configuracoes' },
-  ];
-
-  const isActive = (path: string) => location.pathname === path;
-
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200 fixed top-0 left-0 right-0 z-10">
+      <header className="fixed left-0 right-0 top-0 z-10 border-b border-gray-200 bg-white shadow-sm">
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
             <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="p-2 hover:bg-gray-100 rounded-lg lg:hidden"
+              onClick={() => setSidebarOpen((prev) => !prev)}
+              className="rounded-lg p-2 hover:bg-gray-100 lg:hidden"
             >
-              {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-primary-600 rounded-lg flex items-center justify-center">
-                <span className="text-2xl">🐂</span>
-              </div>
-              <div>
-                <h1 className="text-lg font-bold text-gray-900">iBoi</h1>
-                <p className="text-xs text-gray-500 hidden sm:block">Gestão Inteligente de Gado</p>
+            <div className="flex items-center gap-3">
+              <img src={logo} alt="Logo" className="h-14 w-auto object-contain" />
+              <div className="hidden md:block">
+                <p className="text-sm font-medium text-gray-600">Painel operacional do SaaS</p>
               </div>
             </div>
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="text-right hidden sm:block">
-              <p className="text-sm font-medium text-gray-900">{user.nome}</p>
-              <p className="text-xs text-gray-500">{user.farmRole}</p>
+            <div className="hidden text-right sm:block">
+              <p className="text-sm font-medium text-gray-900">{user?.nome ?? 'Conta'}</p>
+              <p className="text-xs text-gray-500">{user?.farmRole ?? 'Admin'}</p>
             </div>
-            <button
-              onClick={handleLogout}
-              className="p-2 hover:bg-gray-100 rounded-lg text-gray-600"
-              title="Sair"
-            >
-              <LogOut className="w-5 h-5" />
+            <button onClick={handleLogout} className="rounded-lg p-2 text-gray-600 hover:bg-gray-100">
+              <LogOut className="h-5 w-5" />
             </button>
           </div>
         </div>
       </header>
 
-      {/* Sidebar */}
       <aside
-        className={`fixed left-0 top-16 bottom-0 bg-white border-r border-gray-200 transition-transform duration-300 z-20 ${
+        className={`fixed left-0 top-16 bottom-0 z-20 w-64 border-r border-gray-200 bg-white transition-transform duration-300 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        } lg:translate-x-0 w-64`}
+        } lg:translate-x-0`}
       >
-        <nav className="p-4 space-y-1">
+        <nav className="space-y-1 p-4">
           {menuItems.map((item) => {
             const Icon = item.icon;
-            const active = isActive(item.path);
+            const active = location.pathname === item.path;
             return (
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                  active
-                    ? 'bg-primary-50 text-primary-700 font-medium'
-                    : 'text-gray-700 hover:bg-gray-50'
+                className={`flex w-full items-center gap-3 rounded-lg px-4 py-3 transition-colors ${
+                  active ? 'bg-primary-50 font-medium text-primary-700' : 'text-gray-700 hover:bg-gray-50'
                 }`}
               >
-                <Icon className={`w-5 h-5 ${active ? 'text-primary-600' : 'text-gray-400'}`} />
+                <Icon className={`h-5 w-5 ${active ? 'text-primary-600' : 'text-gray-400'}`} />
                 <span>{item.label}</span>
               </button>
             );
@@ -108,23 +100,14 @@ export default function Layout() {
         </nav>
       </aside>
 
-      {/* Main Content */}
-      <main
-        className={`pt-16 transition-all duration-300 ${
-          sidebarOpen ? 'lg:pl-64' : ''
-        }`}
-      >
+      <main className={`pt-16 transition-all duration-300 ${sidebarOpen ? 'lg:pl-64' : ''}`}>
         <div className="p-6">
           <Outlet />
         </div>
       </main>
 
-      {/* Mobile Overlay */}
       {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-10 lg:hidden top-16"
-          onClick={() => setSidebarOpen(false)}
-        />
+        <div className="fixed inset-0 top-16 z-10 bg-black/50 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
     </div>
   );

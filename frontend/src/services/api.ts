@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { clearSession, getToken, setSubscriptionReason } from './session';
 
 const api = axios.create({
   baseURL: 'http://localhost:8080',
@@ -7,23 +8,27 @@ const api = axios.create({
   },
 });
 
-// Interceptor para adicionar token em todas as requisições
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
+  const token = getToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
 
-// Interceptor para tratar erros
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('token');
+      clearSession();
       window.location.href = '/login';
     }
+
+    if (error.response?.status === 402) {
+      setSubscriptionReason(error.response?.data?.code || 'SUBSCRIPTION_INACTIVE');
+      window.location.href = '/app/assinatura';
+    }
+
     return Promise.reject(error);
   }
 );

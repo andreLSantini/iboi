@@ -6,33 +6,38 @@ import com.iboi.financeiro.api.dto.ResumoDespesasPorCategoria
 import com.iboi.financeiro.domain.CategoriaDespesa
 import com.iboi.financeiro.repository.DespesaRepository
 import com.iboi.financeiro.usecase.RegistrarDespesaUseCase
-import com.iboi.identity.infrastructure.repository.UsuarioRepository
+import com.iboi.shared.security.SecurityUtils
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
-import org.springframework.security.core.context.SecurityContextHolder
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.RestController
 import java.math.BigDecimal
 import java.time.LocalDate
-import java.util.*
+import java.util.UUID
 
 @RestController
 @RequestMapping("/api/despesas")
-@Tag(name = "Despesas", description = "Gestão de custos e despesas da fazenda")
+@Tag(name = "Despesas", description = "Gestao de custos e despesas da fazenda")
 class DespesaController(
         private val registrarDespesaUseCase: RegistrarDespesaUseCase,
-        private val despesaRepository: DespesaRepository,
-        private val usuarioRepository: UsuarioRepository
+        private val despesaRepository: DespesaRepository
 ) {
 
     @PostMapping
     @Operation(summary = "Registrar despesa")
     fun registrar(@RequestBody request: RegistrarDespesaRequest): ResponseEntity<DespesaDto> {
-        val farmId = getFarmIdFromAuth()
-        val email = getEmailFromAuth()
-        val despesa = registrarDespesaUseCase.execute(farmId, email, request)
+        val despesa = registrarDespesaUseCase.execute(
+                getFarmIdFromAuth(),
+                getEmailFromAuth(),
+                request
+        )
         return ResponseEntity.status(HttpStatus.CREATED).body(despesa)
     }
 
@@ -72,8 +77,11 @@ class DespesaController(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) dataInicio: LocalDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) dataFim: LocalDate
     ): ResponseEntity<List<ResumoDespesasPorCategoria>> {
-        val farmId = getFarmIdFromAuth()
-        val resultado = despesaRepository.sumByFarmIdAndDataBetweenGroupByCategoria(farmId, dataInicio, dataFim)
+        val resultado = despesaRepository.sumByFarmIdAndDataBetweenGroupByCategoria(
+                getFarmIdFromAuth(),
+                dataInicio,
+                dataFim
+        )
 
         val resumo = resultado.map {
             ResumoDespesasPorCategoria(
@@ -85,14 +93,7 @@ class DespesaController(
         return ResponseEntity.ok(resumo)
     }
 
-    private fun getFarmIdFromAuth(): UUID {
-        val email = getEmailFromAuth()
-        val usuario = usuarioRepository.findByEmail(email)
-                ?: throw IllegalStateException("Usuário não encontrado")
-        return usuario.empresa.id!!
-    }
+    private fun getFarmIdFromAuth(): UUID = SecurityUtils.currentFarmId()
 
-    private fun getEmailFromAuth(): String {
-        return SecurityContextHolder.getContext().authentication.principal as String
-    }
+    private fun getEmailFromAuth(): String = SecurityUtils.currentEmail()
 }

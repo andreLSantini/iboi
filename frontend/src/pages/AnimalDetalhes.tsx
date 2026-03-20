@@ -30,11 +30,11 @@ export default function AnimalDetalhes() {
     try {
       setLoading(true);
       const [animalRes, eventosRes] = await Promise.all([
-        api.get<AnimalDto>(`/api/animais/${animalId}`),
-        api.get<EventoDto[]>(`/api/eventos/animal/${animalId}`)
+        api.get(`/api/animais/${animalId}`),
+        api.get(`/api/eventos/animal/${animalId}`)
       ]);
       setAnimal(animalRes.data);
-      setEventos(eventosRes.data);
+      setEventos(Array.isArray(eventosRes.data) ? eventosRes.data : eventosRes.data.content || []);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
       alert('Erro ao carregar dados do animal');

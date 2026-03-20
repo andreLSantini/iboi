@@ -1,35 +1,25 @@
 package com.iboi.sanitario.api
 
-import com.iboi.identity.infrastructure.repository.UsuarioRepository
 import com.iboi.sanitario.api.dto.CalendarioSanitarioResponse
 import com.iboi.sanitario.usecase.CalendarioSanitarioUseCase
+import com.iboi.shared.security.SecurityUtils
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
-import org.springframework.security.core.context.SecurityContextHolder
-import org.springframework.web.bind.annotation.*
-import java.util.*
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @RequestMapping("/api/sanitario")
-@Tag(name = "Calendário Sanitário", description = "Gestão de protocolos e agendamentos de vacinas/vermífugos")
+@Tag(name = "Calendario Sanitario", description = "Gestao de protocolos e agendamentos de vacinas e vermifugos")
 class CalendarioSanitarioController(
-        private val calendarioSanitarioUseCase: CalendarioSanitarioUseCase,
-        private val usuarioRepository: UsuarioRepository
+        private val calendarioSanitarioUseCase: CalendarioSanitarioUseCase
 ) {
 
     @GetMapping("/calendario")
-    @Operation(summary = "Obter calendário sanitário", description = "Retorna agendamentos pendentes, atrasados e próximos 30 dias")
+    @Operation(summary = "Obter calendario sanitario", description = "Retorna agendamentos pendentes, atrasados e proximos 30 dias")
     fun getCalendario(): ResponseEntity<CalendarioSanitarioResponse> {
-        val farmId = getFarmIdFromAuth()
-        val calendario = calendarioSanitarioUseCase.execute(farmId)
-        return ResponseEntity.ok(calendario)
-    }
-
-    private fun getFarmIdFromAuth(): UUID {
-        val email = SecurityContextHolder.getContext().authentication.principal as String
-        val usuario = usuarioRepository.findByEmail(email)
-                ?: throw IllegalStateException("Usuário não encontrado")
-        return usuario.empresa.id!!
+        return ResponseEntity.ok(calendarioSanitarioUseCase.execute(SecurityUtils.currentFarmId()))
     }
 }

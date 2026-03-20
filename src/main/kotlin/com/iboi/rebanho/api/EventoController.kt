@@ -1,33 +1,54 @@
 package com.iboi.rebanho.api
 
-import com.iboi.identity.infrastructure.repository.UsuarioRepository
-import com.iboi.identity.infrastructure.repository.UserFarmProfileRepository
-import com.iboi.rebanho.api.dto.*
+import com.iboi.rebanho.api.dto.AnimalResumoDto
+import com.iboi.rebanho.api.dto.EventoDto
+import com.iboi.rebanho.api.dto.LoteResumoDto
+import com.iboi.rebanho.api.dto.RegistrarEventoRequest
 import com.iboi.rebanho.domain.TipoEvento
 import com.iboi.rebanho.repository.EventoRepository
 import com.iboi.rebanho.usecase.RegistrarEventoUseCase
+import com.iboi.shared.security.SecurityUtils
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.responses.ApiResponses
+import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.validation.Valid
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
-import org.springframework.security.core.context.SecurityContextHolder
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.RestController
 import java.time.LocalDate
-import java.util.*
+import java.util.UUID
 
 @RestController
 @RequestMapping("/api/eventos")
+@Tag(name = "Eventos", description = "Registro de eventos do rebanho")
 class EventoController(
         private val eventoRepository: EventoRepository,
-        private val usuarioRepository: UsuarioRepository,
-        private val userFarmProfileRepository: UserFarmProfileRepository,
         private val registrarEventoUseCase: RegistrarEventoUseCase
 ) {
 
     @PostMapping
-    fun registrar(@RequestBody request: RegistrarEventoRequest): ResponseEntity<EventoDto> {
-        val farmId = getFarmIdFromAuth()
-        val email = getEmailFromAuth()
-        val evento = registrarEventoUseCase.execute(farmId, email, request)
+    @Operation(summary = "Registrar evento", description = "Registra um novo evento para um animal")
+    @ApiResponses(
+            value = [
+                ApiResponse(responseCode = "201", description = "Evento registrado com sucesso"),
+                ApiResponse(responseCode = "400", description = "Dados invalidos"),
+                ApiResponse(responseCode = "404", description = "Animal nao encontrado")
+            ]
+    )
+    fun registrar(@Valid @RequestBody request: RegistrarEventoRequest): ResponseEntity<EventoDto> {
+        val evento = registrarEventoUseCase.execute(
+                SecurityUtils.currentFarmId(),
+                SecurityUtils.currentEmail(),
+                request
+        )
         return ResponseEntity.status(HttpStatus.CREATED).body(evento)
     }
 
@@ -38,7 +59,7 @@ class EventoController(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) dataFim: LocalDate?,
             @RequestParam(required = false) animalId: UUID?
     ): ResponseEntity<List<EventoDto>> {
-        val farmId = getFarmIdFromAuth()
+        val farmId = SecurityUtils.currentFarmId()
 
         val eventos = when {
             animalId != null -> eventoRepository.findByAnimalIdOrderByDataDesc(animalId)
@@ -47,20 +68,17 @@ class EventoController(
             else -> eventoRepository.findByFarmIdOrderByDataDesc(farmId)
         }
 
-        val dtos = eventos.map { toDto(it) }
-        return ResponseEntity.ok(dtos)
+        return ResponseEntity.ok(eventos.map { toDto(it) })
     }
 
     @GetMapping("/animal/{animalId}")
     fun listarPorAnimal(@PathVariable animalId: UUID): ResponseEntity<List<EventoDto>> {
-        val eventos = eventoRepository.findByAnimalIdOrderByDataDesc(animalId)
-        val dtos = eventos.map { toDto(it) }
-        return ResponseEntity.ok(dtos)
+        return ResponseEntity.ok(eventoRepository.findByAnimalIdOrderByDataDesc(animalId).map { toDto(it) })
     }
 
     @GetMapping("/{id}")
     fun buscarPorId(@PathVariable id: UUID): ResponseEntity<EventoDto> {
-        val farmId = getFarmIdFromAuth()
+        val farmId = SecurityUtils.currentFarmId()
         val evento = eventoRepository.findById(id).orElse(null) ?: return ResponseEntity.notFound().build()
 
         if (evento.farm.id != farmId) {
@@ -68,23 +86,6 @@ class EventoController(
         }
 
         return ResponseEntity.ok(toDto(evento))
-    }
-
-    private fun getFarmIdFromAuth(): UUID {
-        val email = getEmailFromAuth()
-        val usuario = usuarioRepository.findByEmail(email)
-                ?: throw IllegalStateException("Usuário não encontrado")
-
-        // Buscar o perfil default do usuário
-        val userFarmProfile = userFarmProfileRepository.findByUsuario_IdAndIsDefaultTrue(usuario.id!!)
-                ?: userFarmProfileRepository.findByUsuario_Id(usuario.id!!)
-                ?: throw IllegalStateException("Usuário não possui fazenda associada")
-
-        return userFarmProfile.farm.id!!
-    }
-
-    private fun getEmailFromAuth(): String {
-        return SecurityContextHolder.getContext().authentication.principal as String
     }
 
     private fun toDto(evento: com.iboi.rebanho.domain.Evento): EventoDto {
@@ -102,9 +103,7 @@ class EventoController(
                 produto = evento.produto,
                 dose = evento.dose,
                 unidadeMedida = evento.unidadeMedida,
-                loteDestino = evento.loteDestino?.let {
-                    LoteResumoDto(it.id!!, it.nome)
-                },
+                loteDestino = evento.loteDestino?.let { LoteResumoDto(it.id!!, it.nome) },
                 valor = evento.valor,
                 responsavel = evento.responsavel?.nome
         )

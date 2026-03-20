@@ -21,12 +21,14 @@ import type {
   Sexo,
   CategoriaAnimal,
   Raca,
-  StatusAnimal
+  StatusAnimal,
+  LoteDto
 } from '../types/index';
 
 export default function Animais() {
   const navigate = useNavigate();
   const [animais, setAnimais] = useState<AnimalDto[]>([]);
+  const [lotes, setLotes] = useState<LoteDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
@@ -54,23 +56,38 @@ export default function Animais() {
     dataNascimento: '',
     pesoAtual: undefined,
     categoria: 'BEZERRO',
+    loteId: undefined,
     observacoes: ''
   });
 
   useEffect(() => {
     loadAnimais();
+    loadLotes();
   }, []);
 
   const loadAnimais = async () => {
     try {
       setLoading(true);
-      const response = await api.get<AnimalDto[]>('/api/animais');
-      setAnimais(response.data);
+      const response = await api.get('/api/animais');
+      const data = Array.isArray(response.data) ? response.data : response.data.content || [];
+      setAnimais(data);
     } catch (error) {
       console.error('Erro ao carregar animais:', error);
       setError('Erro ao carregar animais');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadLotes = async () => {
+    try {
+      const response = await api.get('/api/lotes', {
+        params: { apenasAtivos: true }
+      });
+      const data = Array.isArray(response.data) ? response.data : response.data.content || [];
+      setLotes(data);
+    } catch (error) {
+      console.error('Erro ao carregar lotes:', error);
     }
   };
 
@@ -85,6 +102,7 @@ export default function Animais() {
           raca: formData.raca,
           pesoAtual: formData.pesoAtual,
           categoria: formData.categoria,
+          loteId: formData.loteId,
           observacoes: formData.observacoes || undefined
         };
         await api.put(`/api/animais/${editingAnimal.id}`, updateData);
@@ -120,6 +138,7 @@ export default function Animais() {
         dataNascimento: animal.dataNascimento,
         pesoAtual: animal.pesoAtual,
         categoria: animal.categoria,
+        loteId: animal.lote?.id,
         observacoes: animal.observacoes || ''
       });
     } else {
@@ -132,6 +151,7 @@ export default function Animais() {
         dataNascimento: '',
         pesoAtual: undefined,
         categoria: 'BEZERRO',
+        loteId: undefined,
         observacoes: ''
       });
     }
@@ -586,6 +606,26 @@ export default function Animais() {
                     {categoriasOptions.map((cat) => (
                       <option key={cat} value={cat}>
                         {cat}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Lote
+                  </label>
+                  <select
+                    value={formData.loteId || ''}
+                    onChange={(e) =>
+                      setFormData({ ...formData, loteId: e.target.value || undefined })
+                    }
+                    className="input-field"
+                  >
+                    <option value="">Sem lote</option>
+                    {lotes.map((lote) => (
+                      <option key={lote.id} value={lote.id}>
+                        {lote.nome} ({lote.quantidadeAnimais} animais)
                       </option>
                     ))}
                   </select>

@@ -1,33 +1,35 @@
 package com.iboi.ia.api
 
-import com.iboi.identity.infrastructure.repository.FarmRepository
-import com.iboi.identity.infrastructure.repository.UsuarioRepository
 import com.iboi.ia.domain.CompartilhamentoVeterinario
 import com.iboi.ia.repository.CompartilhamentoVeterinarioRepository
+import com.iboi.identity.infrastructure.repository.FarmRepository
+import com.iboi.shared.security.SecurityUtils
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
-import org.springframework.security.core.context.SecurityContextHolder
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.DeleteMapping
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RestController
 import java.time.LocalDateTime
-import java.util.*
+import java.util.UUID
 
 @RestController
 @RequestMapping("/api/veterinarios")
-@Tag(name = "Veterinários", description = "Compartilhamento de acesso com veterinários")
+@Tag(name = "Veterinarios", description = "Compartilhamento de acesso com veterinarios")
 class VeterinarioController(
         private val compartilhamentoRepository: CompartilhamentoVeterinarioRepository,
-        private val farmRepository: FarmRepository,
-        private val usuarioRepository: UsuarioRepository
+        private val farmRepository: FarmRepository
 ) {
 
     @PostMapping("/convidar")
-    @Operation(summary = "Convidar veterinário", description = "Compartilha acesso da fazenda com um veterinário")
+    @Operation(summary = "Convidar veterinario", description = "Compartilha acesso da fazenda com um veterinario")
     fun convidar(@RequestBody request: ConvidarVeterinarioRequest): ResponseEntity<ConvidarVeterinarioResponse> {
-        val farmId = getFarmIdFromAuth()
-        val farm = farmRepository.findById(farmId).orElseThrow()
-
+        val farm = farmRepository.findById(SecurityUtils.currentFarmId()).orElseThrow()
         val token = UUID.randomUUID().toString()
 
         val compartilhamento = compartilhamentoRepository.save(
@@ -37,11 +39,9 @@ class VeterinarioController(
                         emailVeterinario = request.email,
                         crmv = request.crmv,
                         tokenAcesso = token,
-                        dataExpiracao = LocalDateTime.now().plusDays(365) // 1 ano
+                        dataExpiracao = LocalDateTime.now().plusDays(365)
                 )
         )
-
-        // TODO: Enviar email com convite
 
         return ResponseEntity.status(HttpStatus.CREATED).body(
                 ConvidarVeterinarioResponse(
@@ -53,10 +53,12 @@ class VeterinarioController(
     }
 
     @GetMapping
-    @Operation(summary = "Listar veterinários com acesso")
+    @Operation(summary = "Listar veterinarios com acesso")
     fun listar(): ResponseEntity<List<VeterinarioDto>> {
-        val farmId = getFarmIdFromAuth()
-        val compartilhamentos = compartilhamentoRepository.findByFarmIdAndAtivo(farmId, true)
+        val compartilhamentos = compartilhamentoRepository.findByFarmIdAndAtivo(
+                SecurityUtils.currentFarmId(),
+                true
+        )
 
         val dtos = compartilhamentos.map {
             VeterinarioDto(
@@ -81,13 +83,6 @@ class VeterinarioController(
         compartilhamentoRepository.save(compartilhamento)
 
         return ResponseEntity.noContent().build()
-    }
-
-    private fun getFarmIdFromAuth(): UUID {
-        val email = SecurityContextHolder.getContext().authentication.principal as String
-        val usuario = usuarioRepository.findByEmail(email)
-                ?: throw IllegalStateException("Usuário não encontrado")
-        return usuario.empresa.id!!
     }
 }
 

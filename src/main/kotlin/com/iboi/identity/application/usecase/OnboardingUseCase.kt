@@ -1,6 +1,7 @@
 package com.iboi.identity.application.usecase
 
 import com.iboi.identity.api.dto.request.OnboardingRequest
+import com.iboi.identity.api.dto.response.FarmSummaryDto
 import com.iboi.identity.api.dto.response.FazendaDto
 import com.iboi.identity.api.dto.response.OnboardingResponse
 import com.iboi.identity.api.dto.response.UsuarioDto
@@ -46,7 +47,7 @@ class OnboardingUseCase(
         )
 
         // 2️⃣ Criar assinatura TRIAL (30 dias)
-        val assinatura = assinaturaRepository.save(
+        assinaturaRepository.save(
                 Assinatura(
                         empresa = empresa,
                         tipo = TipoAssinatura.TRIAL,
@@ -94,7 +95,13 @@ class OnboardingUseCase(
         val permissions = resolvePermissionsUseCase.execute(profile.role)
 
         // 7️⃣ Gerar token
-        val token = jwtService.generateToken(usuario, permissions)
+        val token = jwtService.generateToken(usuario, permissions, farm.id)
+        val farms = listOf(
+                FarmSummaryDto(
+                        id = farm.id!!,
+                        name = farm.name
+                )
+        )
 
         // 8️⃣ Retornar resposta completa
         return OnboardingResponse(
@@ -111,7 +118,9 @@ class OnboardingUseCase(
                         nome = farm.name,
                         cidade = farm.city,
                         estado = farm.state
-                )
+                ),
+                farms = farms,
+                defaultFarmId = farm.id!!
         )
     }
 

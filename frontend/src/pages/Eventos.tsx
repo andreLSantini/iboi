@@ -47,11 +47,11 @@ export default function Eventos() {
     try {
       setLoading(true);
       const [eventosRes, animaisRes] = await Promise.all([
-        api.get<EventoDto[]>('/api/eventos'),
-        api.get<AnimalDto[]>('/api/animais', { params: { status: 'ATIVO' } })
+        api.get('/api/eventos'),
+        api.get('/api/animais', { params: { status: 'ATIVO' } })
       ]);
-      setEventos(eventosRes.data);
-      setAnimais(animaisRes.data);
+      setEventos(Array.isArray(eventosRes.data) ? eventosRes.data : eventosRes.data.content || []);
+      setAnimais(Array.isArray(animaisRes.data) ? animaisRes.data : animaisRes.data.content || []);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
       setError('Erro ao carregar dados');

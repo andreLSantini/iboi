@@ -9,31 +9,42 @@ import com.iboi.plano.model.StatusPagamento
 import com.iboi.plano.repository.AssinaturaRepository
 import com.iboi.plano.repository.PagamentoRepository
 import com.iboi.plano.service.AssinaturaService
+import com.iboi.plano.service.BillingGateway
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
-import java.util.*
+import java.util.UUID
 
 @Component
 class ProcessarPagamentoUseCase(
         private val assinaturaRepository: AssinaturaRepository,
         private val pagamentoRepository: PagamentoRepository,
-        private val assinaturaService: AssinaturaService
+        private val assinaturaService: AssinaturaService,
+        private val billingGateway: BillingGateway
 ) {
 
     @Transactional
     fun execute(empresaId: UUID, request: ProcessarPagamentoRequest): ProcessarPagamentoResponse {
         val assinatura = assinaturaRepository.findByEmpresaId(empresaId)
-                ?: throw IllegalStateException("Assinatura não encontrada")
+                ?: throw IllegalStateException("Assinatura nao encontrada")
 
-        // Validar se há valor a pagar
         val valor = assinatura.valor
-                ?: throw IllegalStateException("Assinatura não possui valor definido")
+                ?: throw IllegalStateException("Assinatura nao possui valor definido")
 
         val periodoPagamento = assinatura.periodoPagamento
-                ?: throw IllegalStateException("Assinatura não possui período de pagamento definido")
+                ?: throw IllegalStateException("Assinatura nao possui periodo de pagamento definido")
 
-        // Criar registro de pagamento
+        val gatewayResult = billingGateway.capturePayment(
+                empresaId = empresaId,
+                valor = valor,
+                metodoPagamento = request.metodoPagamento,
+                externalTransactionId = request.transacaoId
+        )
+
+        if (!gatewayResult.success) {
+            throw IllegalStateException("Nao foi possivel confirmar o pagamento no gateway")
+        }
+
         val pagamento = pagamentoRepository.save(
                 Pagamento(
                         assinatura = assinatura,
@@ -42,11 +53,10 @@ class ProcessarPagamentoUseCase(
                         dataPagamento = LocalDateTime.now(),
                         status = StatusPagamento.PAGO,
                         metodoPagamento = request.metodoPagamento,
-                        transacaoId = request.transacaoId
+                        transacaoId = gatewayResult.transactionId
                 )
         )
 
-        // Atualizar assinatura
         val agora = LocalDateTime.now()
         val novaDataVencimento = assinaturaService.calcularProximaCobranca(agora, periodoPagamento)
 

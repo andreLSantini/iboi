@@ -1,10 +1,21 @@
 package com.iboi.shared.security
 
+import com.iboi.security.AuthenticatedUser
 import org.springframework.security.core.context.SecurityContextHolder
-import org.springframework.security.oauth2.jwt.Jwt
+import java.util.UUID
 
 object SecurityUtils {
 
-    fun currentUserId(): String =
-            (SecurityContextHolder.getContext().authentication?.principal as Jwt).subject
+    private fun principal(): AuthenticatedUser =
+            SecurityContextHolder.getContext().authentication?.principal as? AuthenticatedUser
+                    ?: throw IllegalStateException("Usuário autenticado não encontrado")
+
+    fun currentUserId(): UUID = principal().userId
+
+    fun currentEmail(): String = principal().email
+
+    fun currentEmpresaId(): UUID = principal().empresaId
+
+    fun currentFarmId(): UUID =
+            principal().farmId ?: throw IllegalStateException("Usuário não possui fazenda padrão no token")
 }

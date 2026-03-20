@@ -2,37 +2,28 @@ package com.iboi.ia.api
 
 import com.iboi.ia.usecase.DashboardInteligenteResponse
 import com.iboi.ia.usecase.DashboardInteligenteUseCase
-import com.iboi.identity.infrastructure.repository.UsuarioRepository
+import com.iboi.shared.security.SecurityUtils
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
-import org.springframework.security.core.context.SecurityContextHolder
-import org.springframework.web.bind.annotation.*
-import java.util.*
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @RequestMapping("/api/ia")
-@Tag(name = "IA Dashboard", description = "Dashboard inteligente com predições e análises")
+@Tag(name = "IA Dashboard", description = "Dashboard inteligente com predicoes e analises")
 class DashboardInteligenteController(
-        private val dashboardInteligenteUseCase: DashboardInteligenteUseCase,
-        private val usuarioRepository: UsuarioRepository
+        private val dashboardInteligenteUseCase: DashboardInteligenteUseCase
 ) {
 
     @GetMapping("/dashboard")
     @Operation(
             summary = "Dashboard inteligente",
-            description = "Retorna análises preditivas, scores de risco, alertas e recomendações baseadas em IA"
+            description = "Retorna analises preditivas, scores de risco, alertas e recomendacoes baseadas em IA"
     )
     fun getDashboard(): ResponseEntity<DashboardInteligenteResponse> {
-        val farmId = getFarmIdFromAuth()
-        val dashboard = dashboardInteligenteUseCase.execute(farmId)
+        val dashboard = dashboardInteligenteUseCase.execute(SecurityUtils.currentFarmId())
         return ResponseEntity.ok(dashboard)
-    }
-
-    private fun getFarmIdFromAuth(): UUID {
-        val email = SecurityContextHolder.getContext().authentication.principal as String
-        val usuario = usuarioRepository.findByEmail(email)
-                ?: throw IllegalStateException("Usuário não encontrado")
-        return usuario.empresa.id!!
     }
 }

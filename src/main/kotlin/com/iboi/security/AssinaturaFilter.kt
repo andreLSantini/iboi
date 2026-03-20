@@ -1,8 +1,8 @@
 package com.iboi.security
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.iboi.identity.infrastructure.repository.UsuarioRepository
 import com.iboi.plano.service.AssinaturaService
+import com.iboi.shared.security.SecurityUtils
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -14,7 +14,6 @@ import java.time.LocalDateTime
 @Component
 class AssinaturaFilter(
         private val assinaturaService: AssinaturaService,
-        private val usuarioRepository: UsuarioRepository,
         private val objectMapper: ObjectMapper
 ) : OncePerRequestFilter() {
 
@@ -25,6 +24,8 @@ class AssinaturaFilter(
                 || path.startsWith("/v3/api-docs")
                 || path.startsWith("/swagger-ui")
                 || path.startsWith("/h2-console")
+                || path.startsWith("/api/assinatura")
+                || path.startsWith("/api/pagamento")
     }
 
     override fun doFilterInternal(
@@ -35,28 +36,24 @@ class AssinaturaFilter(
         val authentication = SecurityContextHolder.getContext().authentication
 
         if (authentication?.isAuthenticated == true) {
-            val email = authentication.principal as? String
+            val empresaId = runCatching { SecurityUtils.currentEmpresaId() }.getOrNull()
 
-            if (email != null) {
-                val usuario = usuarioRepository.findByEmail(email)
-                val empresaId = usuario?.empresa?.id
+            if (empresaId != null) {
+                val assinaturaAtiva = assinaturaService.isAssinaturaAtiva(empresaId)
 
-                if (empresaId != null) {
-                    val assinaturaAtiva = assinaturaService.isAssinaturaAtiva(empresaId)
+                if (!assinaturaAtiva) {
+                    response.status = HttpServletResponse.SC_PAYMENT_REQUIRED
+                    response.contentType = "application/json"
+                    response.characterEncoding = "UTF-8"
 
-                    if (!assinaturaAtiva) {
-                        response.status = HttpServletResponse.SC_PAYMENT_REQUIRED
-                        response.contentType = "application/json"
-                        response.characterEncoding = "UTF-8"
+                    val errorResponse = mapOf(
+                            "code" to "SUBSCRIPTION_INACTIVE",
+                            "message" to "Assinatura vencida. Realize o pagamento para continuar usando o sistema.",
+                            "timestamp" to LocalDateTime.now().toString()
+                    )
 
-                        val errorResponse = mapOf(
-                                "message" to "Assinatura vencida. Realize o pagamento para continuar usando o sistema.",
-                                "timestamp" to LocalDateTime.now().toString()
-                        )
-
-                        response.writer.write(objectMapper.writeValueAsString(errorResponse))
-                        return
-                    }
+                    response.writer.write(objectMapper.writeValueAsString(errorResponse))
+                    return
                 }
             }
         }
