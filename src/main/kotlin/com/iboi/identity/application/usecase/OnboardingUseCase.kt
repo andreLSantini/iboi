@@ -46,14 +46,14 @@ class OnboardingUseCase(
                 )
         )
 
-        // 2️⃣ Criar assinatura TRIAL (30 dias)
+        // 2️⃣ Criar assinatura FREE para aquisicao self-service
         assinaturaRepository.save(
                 Assinatura(
                         empresa = empresa,
-                        tipo = TipoAssinatura.TRIAL,
-                        status = StatusAssinatura.TRIAL,
+                        tipo = TipoAssinatura.FREE,
+                        status = StatusAssinatura.ATIVA,
                         dataInicio = LocalDateTime.now(),
-                        dataVencimento = LocalDateTime.now().plusDays(30)
+                        dataVencimento = LocalDateTime.now().plusYears(50)
                 )
         )
 

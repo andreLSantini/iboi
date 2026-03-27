@@ -65,13 +65,13 @@ export default function Dashboard() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="p-4 bg-primary-50 border border-primary-200 rounded-lg">
-              <p className="text-sm text-primary-700 font-medium mb-1">Trial Ativo</p>
-              <p className="text-2xl font-bold text-primary-900">30 dias</p>
+                <p className="text-sm text-primary-700 font-medium mb-1">Plano de Entrada</p>
+                <p className="text-2xl font-bold text-primary-900">FREE</p>
             </div>
 
             <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-              <p className="text-sm text-green-700 font-medium mb-1">Plano</p>
-              <p className="text-2xl font-bold text-green-900">TRIAL</p>
+                <p className="text-sm text-green-700 font-medium mb-1">Plano</p>
+                <p className="text-2xl font-bold text-green-900">FREE</p>
             </div>
 
             <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">

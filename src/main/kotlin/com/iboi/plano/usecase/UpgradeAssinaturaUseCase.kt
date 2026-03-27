@@ -9,7 +9,7 @@ import com.iboi.plano.service.AssinaturaService
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
-import java.util.*
+import java.util.UUID
 
 @Component
 class UpgradeAssinaturaUseCase(
@@ -20,29 +20,24 @@ class UpgradeAssinaturaUseCase(
     @Transactional
     fun execute(empresaId: UUID, request: UpgradeRequest) {
         val assinatura = assinaturaRepository.findByEmpresaId(empresaId)
-                ?: throw IllegalStateException("Assinatura não encontrada")
+                ?: throw IllegalStateException("Assinatura nao encontrada")
 
-        // Validações
-        if (request.novoPlano == TipoAssinatura.TRIAL) {
-            throw IllegalArgumentException("Não é possível fazer upgrade para plano TRIAL")
+        if (request.novoPlano == TipoAssinatura.TRIAL || request.novoPlano == TipoAssinatura.FREE) {
+            throw IllegalArgumentException("Nao e possivel fazer upgrade para o plano de entrada")
         }
 
         if (assinatura.tipo == request.novoPlano && assinatura.status == StatusAssinatura.ATIVA) {
-            throw IllegalArgumentException("Empresa já possui este plano ativo")
+            throw IllegalArgumentException("Empresa ja possui este plano ativo")
         }
 
-        // Calcular valor
         val valor = PlanoPreco.getValor(request.novoPlano, request.periodo)
-
-        // Calcular próxima cobrança
         val agora = LocalDateTime.now()
         val proximaCobranca = assinaturaService.calcularProximaCobranca(agora, request.periodo)
 
-        // Atualizar assinatura
         assinatura.tipo = request.novoPlano
-        assinatura.status = StatusAssinatura.VENCIDA // Aguardando pagamento
+        assinatura.status = StatusAssinatura.VENCIDA
         assinatura.periodoPagamento = request.periodo
-        assinatura.dataVencimento = agora.plusDays(7) // 7 dias para pagar
+        assinatura.dataVencimento = agora.plusDays(7)
         assinatura.proximaCobranca = proximaCobranca
         assinatura.valor = valor
 

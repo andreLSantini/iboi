@@ -1,9 +1,16 @@
 package com.iboi.rebanho.api
 
+import com.iboi.plano.model.PlanoRecurso
+import com.iboi.plano.service.PlanoAcessoService
 import com.iboi.rebanho.api.dto.AnimalDto
 import com.iboi.rebanho.api.dto.AtualizarAnimalRequest
 import com.iboi.rebanho.api.dto.CadastrarAnimalRequest
 import com.iboi.rebanho.api.dto.FiltrarAnimaisRequest
+import com.iboi.rebanho.api.dto.ImportarAnimaisResponse
+import com.iboi.rebanho.api.dto.MovimentacaoAnimalDto
+import com.iboi.rebanho.api.dto.RegistrarMovimentacaoAnimalRequest
+import com.iboi.rebanho.api.dto.RegistrarVacinacaoAnimalRequest
+import com.iboi.rebanho.api.dto.VacinacaoAnimalDto
 import com.iboi.rebanho.domain.CategoriaAnimal
 import com.iboi.rebanho.domain.Sexo
 import com.iboi.rebanho.domain.StatusAnimal
@@ -11,7 +18,12 @@ import com.iboi.rebanho.usecase.AtualizarAnimalUseCase
 import com.iboi.rebanho.usecase.BuscarAnimalPorIdUseCase
 import com.iboi.rebanho.usecase.CadastrarAnimalUseCase
 import com.iboi.rebanho.usecase.DeletarAnimalUseCase
+import com.iboi.rebanho.usecase.ImportarAnimaisCsvUseCase
 import com.iboi.rebanho.usecase.ListarAnimaisUseCase
+import com.iboi.rebanho.usecase.ListarMovimentacoesAnimalUseCase
+import com.iboi.rebanho.usecase.ListarVacinacoesAnimalUseCase
+import com.iboi.rebanho.usecase.RegistrarMovimentacaoAnimalUseCase
+import com.iboi.rebanho.usecase.RegistrarVacinacaoAnimalUseCase
 import com.iboi.shared.security.SecurityUtils
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -33,17 +45,24 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.multipart.MultipartFile
 import java.util.UUID
 
 @RestController
 @RequestMapping("/api/animais")
 @Tag(name = "Animais", description = "Gestao do rebanho")
 class AnimalController(
+        private val planoAcessoService: PlanoAcessoService,
         private val cadastrarAnimalUseCase: CadastrarAnimalUseCase,
         private val listarAnimaisUseCase: ListarAnimaisUseCase,
         private val buscarAnimalPorIdUseCase: BuscarAnimalPorIdUseCase,
         private val atualizarAnimalUseCase: AtualizarAnimalUseCase,
-        private val deletarAnimalUseCase: DeletarAnimalUseCase
+        private val deletarAnimalUseCase: DeletarAnimalUseCase,
+        private val importarAnimaisCsvUseCase: ImportarAnimaisCsvUseCase,
+        private val registrarMovimentacaoAnimalUseCase: RegistrarMovimentacaoAnimalUseCase,
+        private val listarMovimentacoesAnimalUseCase: ListarMovimentacoesAnimalUseCase,
+        private val registrarVacinacaoAnimalUseCase: RegistrarVacinacaoAnimalUseCase,
+        private val listarVacinacoesAnimalUseCase: ListarVacinacoesAnimalUseCase
 ) {
 
     @PostMapping
@@ -51,11 +70,12 @@ class AnimalController(
     @ApiResponses(
             value = [
                 ApiResponse(responseCode = "201", description = "Animal cadastrado com sucesso"),
-                ApiResponse(responseCode = "409", description = "Brinco ja existe"),
+                ApiResponse(responseCode = "409", description = "Identificacao duplicada"),
                 ApiResponse(responseCode = "400", description = "Dados invalidos")
             ]
     )
     fun cadastrar(@Valid @RequestBody request: CadastrarAnimalRequest): ResponseEntity<AnimalDto> {
+        planoAcessoService.requireCapacidadeAnimais(SecurityUtils.currentEmpresaId())
         val animal = cadastrarAnimalUseCase.execute(SecurityUtils.currentFarmId(), request)
         return ResponseEntity.status(HttpStatus.CREATED).body(animal)
     }
@@ -70,15 +90,13 @@ class AnimalController(
             @PageableDefault(size = 20, sort = ["criadoEm"], direction = Sort.Direction.DESC) pageable: Pageable
     ): ResponseEntity<Page<AnimalDto>> {
         val filtro = FiltrarAnimaisRequest(status, categoria, loteId, sexo)
-        val animais = listarAnimaisUseCase.execute(SecurityUtils.currentFarmId(), filtro, pageable)
-        return ResponseEntity.ok(animais)
+        return ResponseEntity.ok(listarAnimaisUseCase.execute(SecurityUtils.currentFarmId(), filtro, pageable))
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Buscar animal por ID", description = "Retorna detalhes de um animal especifico")
     fun buscarPorId(@PathVariable id: UUID): ResponseEntity<AnimalDto> {
-        val animal = buscarAnimalPorIdUseCase.execute(id, SecurityUtils.currentFarmId())
-        return ResponseEntity.ok(animal)
+        return ResponseEntity.ok(buscarAnimalPorIdUseCase.execute(id, SecurityUtils.currentFarmId()))
     }
 
     @PutMapping("/{id}")
@@ -87,8 +105,66 @@ class AnimalController(
             @PathVariable id: UUID,
             @Valid @RequestBody request: AtualizarAnimalRequest
     ): ResponseEntity<AnimalDto> {
-        val animal = atualizarAnimalUseCase.execute(id, SecurityUtils.currentFarmId(), request)
-        return ResponseEntity.ok(animal)
+        return ResponseEntity.ok(atualizarAnimalUseCase.execute(id, SecurityUtils.currentFarmId(), request))
+    }
+
+    @PostMapping("/importar-csv")
+    @Operation(summary = "Importar animais por CSV", description = "Importa uma planilha CSV simples para acelerar o onboarding da fazenda")
+    fun importarCsv(@RequestParam("file") file: MultipartFile): ResponseEntity<ImportarAnimaisResponse> {
+        planoAcessoService.requireCapacidadeAnimais(SecurityUtils.currentEmpresaId())
+        return ResponseEntity.ok(importarAnimaisCsvUseCase.execute(SecurityUtils.currentFarmId(), file))
+    }
+
+    @PostMapping("/{id}/movimentacoes")
+    @Operation(summary = "Registrar movimentacao do animal", description = "Cria historico formal de rastreabilidade por pasto ou fazenda")
+    fun registrarMovimentacao(
+            @PathVariable id: UUID,
+            @Valid @RequestBody request: RegistrarMovimentacaoAnimalRequest
+    ): ResponseEntity<MovimentacaoAnimalDto> {
+        planoAcessoService.requireRecurso(
+                SecurityUtils.currentEmpresaId(),
+                PlanoRecurso.MOVIMENTACAO,
+                "Movimentacao de animais faz parte do plano Basic ou superior."
+        )
+        val movimentacao = registrarMovimentacaoAnimalUseCase.execute(
+                SecurityUtils.currentFarmId(),
+                SecurityUtils.currentEmail(),
+                id,
+                request
+        )
+        return ResponseEntity.status(HttpStatus.CREATED).body(movimentacao)
+    }
+
+    @GetMapping("/{id}/movimentacoes")
+    @Operation(summary = "Listar movimentacoes do animal", description = "Retorna a trilha de rastreabilidade do animal")
+    fun listarMovimentacoes(@PathVariable id: UUID): ResponseEntity<List<MovimentacaoAnimalDto>> {
+        return ResponseEntity.ok(listarMovimentacoesAnimalUseCase.execute(id, SecurityUtils.currentFarmId()))
+    }
+
+    @PostMapping("/{id}/vacinacoes")
+    @Operation(summary = "Registrar vacinacao", description = "Registra vacinacao estruturada do animal")
+    fun registrarVacinacao(
+            @PathVariable id: UUID,
+            @Valid @RequestBody request: RegistrarVacinacaoAnimalRequest
+    ): ResponseEntity<VacinacaoAnimalDto> {
+        planoAcessoService.requireRecurso(
+                SecurityUtils.currentEmpresaId(),
+                PlanoRecurso.VACINACAO,
+                "Vacinacao estruturada faz parte do plano Basic ou superior."
+        )
+        val vacinacao = registrarVacinacaoAnimalUseCase.execute(
+                SecurityUtils.currentFarmId(),
+                SecurityUtils.currentEmail(),
+                id,
+                request
+        )
+        return ResponseEntity.status(HttpStatus.CREATED).body(vacinacao)
+    }
+
+    @GetMapping("/{id}/vacinacoes")
+    @Operation(summary = "Listar vacinacoes", description = "Retorna o historico de vacinacao do animal")
+    fun listarVacinacoes(@PathVariable id: UUID): ResponseEntity<List<VacinacaoAnimalDto>> {
+        return ResponseEntity.ok(listarVacinacoesAnimalUseCase.execute(id, SecurityUtils.currentFarmId()))
     }
 
     @DeleteMapping("/{id}")

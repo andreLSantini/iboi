@@ -1,5 +1,7 @@
 package com.iboi.relatorio.api
 
+import com.iboi.plano.model.PlanoRecurso
+import com.iboi.plano.service.PlanoAcessoService
 import com.iboi.relatorio.dto.DashboardResponse
 import com.iboi.relatorio.dto.HistoricoAnimalResponse
 import com.iboi.relatorio.dto.RelatorioFinanceiroResponse
@@ -25,6 +27,7 @@ import java.util.UUID
 @RequestMapping("/api/relatorios")
 @Tag(name = "Relatorios", description = "Relatorios e dashboards da fazenda")
 class RelatorioController(
+        private val planoAcessoService: PlanoAcessoService,
         private val relatorioRebanhoUseCase: RelatorioRebanhoUseCase,
         private val relatorioFinanceiroUseCase: RelatorioFinanceiroUseCase,
         private val historicoAnimalUseCase: HistoricoAnimalUseCase,
@@ -34,6 +37,11 @@ class RelatorioController(
     @GetMapping("/rebanho")
     @Operation(summary = "Relatorio do rebanho", description = "Totais por categoria, sexo, status, idade e peso medios")
     fun relatorioRebanho(): ResponseEntity<RelatorioRebanhoResponse> {
+        planoAcessoService.requireRecurso(
+                SecurityUtils.currentEmpresaId(),
+                PlanoRecurso.RELATORIOS,
+                "Relatorios avancados fazem parte do plano Pro ou superior."
+        )
         return ResponseEntity.ok(relatorioRebanhoUseCase.execute(SecurityUtils.currentFarmId()))
     }
 
@@ -43,6 +51,11 @@ class RelatorioController(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) dataInicio: LocalDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) dataFim: LocalDate
     ): ResponseEntity<RelatorioFinanceiroResponse> {
+        planoAcessoService.requireRecurso(
+                SecurityUtils.currentEmpresaId(),
+                PlanoRecurso.FINANCEIRO_POR_ANIMAL,
+                "Relatorio financeiro faz parte do plano Pro ou superior."
+        )
         val relatorio = relatorioFinanceiroUseCase.execute(SecurityUtils.currentFarmId(), dataInicio, dataFim)
         return ResponseEntity.ok(relatorio)
     }
@@ -50,12 +63,22 @@ class RelatorioController(
     @GetMapping("/historico-animal/{id}")
     @Operation(summary = "Historico completo do animal", description = "Timeline, evolucao de peso e todos os eventos")
     fun historicoAnimal(@PathVariable id: UUID): ResponseEntity<HistoricoAnimalResponse> {
+        planoAcessoService.requireRecurso(
+                SecurityUtils.currentEmpresaId(),
+                PlanoRecurso.RELATORIOS,
+                "Historico consolidado faz parte do plano Pro ou superior."
+        )
         return ResponseEntity.ok(historicoAnimalUseCase.execute(id))
     }
 
     @GetMapping("/dashboard")
     @Operation(summary = "Dashboard principal", description = "KPIs, eventos recentes e agendamentos proximos")
     fun dashboard(): ResponseEntity<DashboardResponse> {
+        planoAcessoService.requireRecurso(
+                SecurityUtils.currentEmpresaId(),
+                PlanoRecurso.RELATORIOS,
+                "Dashboard gerencial faz parte do plano Pro ou superior."
+        )
         return ResponseEntity.ok(dashboardUseCase.execute(SecurityUtils.currentFarmId()))
     }
 }

@@ -20,7 +20,7 @@ spring:
   security:
     jwt:
       secret: pQlRYusEJ7XfrRmFbjNVEVqymMZzbMLqzvCBvh7OrMU=
-      expiration: 3600000
+      expiration: 43200000
     oauth2:
       resource-server:
         jwt:

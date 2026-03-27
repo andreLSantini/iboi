@@ -1,6 +1,7 @@
 package com.iboi.rebanho.domain
 
 import com.iboi.identity.domain.Farm
+import com.iboi.identity.domain.Pasture
 import jakarta.persistence.*
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -16,7 +17,10 @@ import java.util.*
         indexes = [
                 Index(name = "idx_animal_brinco", columnList = "brinco"),
                 Index(name = "idx_animal_status", columnList = "status"),
-                Index(name = "idx_animal_farm", columnList = "farm_id")
+                Index(name = "idx_animal_farm", columnList = "farm_id"),
+                Index(name = "idx_animal_rfid", columnList = "rfid"),
+                Index(name = "idx_animal_sisbov", columnList = "codigo_sisbov"),
+                Index(name = "idx_animal_pasture", columnList = "pasture_id")
         ]
 )
 class Animal(
@@ -26,6 +30,12 @@ class Animal(
 
         @Column(nullable = false, length = 50)
         var brinco: String,
+
+        @Column(length = 64)
+        var rfid: String? = null,
+
+        @Column(name = "codigo_sisbov", length = 64)
+        var codigoSisbov: String? = null,
 
         @Column(length = 100)
         var nome: String? = null,
@@ -54,11 +64,15 @@ class Animal(
 
         @ManyToOne
         @JoinColumn(name = "farm_id", nullable = false)
-        val farm: Farm,
+        var farm: Farm,
 
         @ManyToOne
         @JoinColumn(name = "lote_id")
         var lote: Lote? = null,
+
+        @ManyToOne
+        @JoinColumn(name = "pasture_id")
+        var pasture: Pasture? = null,
 
         @ManyToOne
         @JoinColumn(name = "pai_id")
@@ -70,6 +84,12 @@ class Animal(
 
         @Column(length = 1000)
         var observacoes: String? = null,
+
+        @Column
+        var dataEntrada: LocalDate? = null,
+
+        @Column(nullable = false)
+        var sisbovAtivo: Boolean = false,
 
         @Column(nullable = false)
         val criadoEm: LocalDateTime = LocalDateTime.now(),

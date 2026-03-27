@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, LogIn } from 'lucide-react';
+import axios from 'axios';
 import api from '../services/api';
 import { storeAuthSession } from '../services/session';
-import type { LoginRequest, LoginResponse } from '../types';
+import type { FarmSummary, LoginRequest, LoginResponse } from '../types';
 import logo from '../assets/logo_transparente.png';
 
 export default function Login() {
@@ -12,6 +13,30 @@ export default function Login() {
   const [senha, setSenha] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [pendingResponse, setPendingResponse] = useState<LoginResponse | null>(null);
+  const [selectedFarmId, setSelectedFarmId] = useState('');
+
+  async function finalizarLoginComFazenda(baseResponse: LoginResponse, farmId: string) {
+    if (farmId === baseResponse.defaultFarmId) {
+      storeAuthSession(baseResponse);
+      navigate('/app/dashboard');
+      return;
+    }
+
+    const switched = await axios.post<LoginResponse>(
+      'http://localhost:8080/api/farms/select',
+      { farmId },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${baseResponse.accessToken}`,
+        },
+      }
+    );
+
+    storeAuthSession(switched.data);
+    navigate('/app/dashboard');
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,8 +46,13 @@ export default function Login() {
     try {
       const request: LoginRequest = { email, senha };
       const response = await api.post<LoginResponse>('/auth/login', request);
-      storeAuthSession(response.data);
-      navigate('/app/dashboard');
+
+      if (response.data.farms.length > 1) {
+        setPendingResponse(response.data);
+        setSelectedFarmId(response.data.defaultFarmId);
+      } else {
+        await finalizarLoginComFazenda(response.data, response.data.defaultFarmId);
+      }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Erro ao fazer login. Verifique suas credenciais.');
     } finally {
@@ -49,49 +79,97 @@ export default function Login() {
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">E-mail</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="input-field"
-                placeholder="seu@email.com"
-                required
-              />
-            </div>
+          {pendingResponse ? (
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm font-medium text-gray-700">Escolha a fazenda para entrar</p>
+                <p className="mt-1 text-sm text-gray-500">Cada fazenda mantém os dados operacionais separados.</p>
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Senha</label>
-              <input
-                type="password"
-                value={senha}
-                onChange={(e) => setSenha(e.target.value)}
-                className="input-field"
-                placeholder="••••••••"
-                required
-              />
-            </div>
+              <div className="space-y-2">
+                {pendingResponse.farms.map((farm: FarmSummary) => (
+                  <button
+                    key={farm.id}
+                    type="button"
+                    onClick={() => setSelectedFarmId(farm.id)}
+                    className={`w-full rounded-xl border px-4 py-3 text-left transition ${
+                      selectedFarmId === farm.id
+                        ? 'border-primary-500 bg-primary-50 text-primary-800'
+                        : 'border-gray-200 bg-white text-gray-700 hover:border-primary-300'
+                    }`}
+                  >
+                    <p className="font-semibold">{farm.name}</p>
+                  </button>
+                ))}
+              </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full btn-primary flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Entrando...
-                </>
-              ) : (
-                <>
-                  <LogIn className="w-5 h-5" />
-                  Entrar
-                </>
-              )}
-            </button>
-          </form>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPendingResponse(null);
+                    setSelectedFarmId('');
+                  }}
+                  className="btn-secondary flex-1"
+                >
+                  Voltar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void finalizarLoginComFazenda(pendingResponse, selectedFarmId)}
+                  disabled={!selectedFarmId || loading}
+                  className="btn-primary flex flex-1 items-center justify-center gap-2"
+                >
+                  {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <LogIn className="w-5 h-5" />}
+                  Entrar na fazenda
+                </button>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">E-mail</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="input-field"
+                  placeholder="seu@email.com"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Senha</label>
+                <input
+                  type="password"
+                  value={senha}
+                  onChange={(e) => setSenha(e.target.value)}
+                  className="input-field"
+                  placeholder="********"
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full btn-primary flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Entrando...
+                  </>
+                ) : (
+                  <>
+                    <LogIn className="w-5 h-5" />
+                    Entrar
+                  </>
+                )}
+              </button>
+            </form>
+          )}
 
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">

@@ -3,6 +3,7 @@ package com.iboi.plano.service
 import com.iboi.plano.model.Assinatura
 import com.iboi.plano.model.PeriodoPagamento
 import com.iboi.plano.model.StatusAssinatura
+import com.iboi.plano.model.TipoAssinatura
 import com.iboi.plano.repository.AssinaturaRepository
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
@@ -17,6 +18,10 @@ class AssinaturaService(
         val assinatura = assinaturaRepository.findByEmpresaId(empresaId)
                 ?: return false
         verificarEAtualizarStatus(assinatura)
+
+        if (assinatura.tipo == TipoAssinatura.FREE) {
+            return assinatura.status == StatusAssinatura.ATIVA
+        }
 
         return when (assinatura.status) {
             StatusAssinatura.TRIAL -> {
@@ -35,6 +40,13 @@ class AssinaturaService(
 
     fun verificarEAtualizarStatus(assinatura: Assinatura) {
         val agora = LocalDateTime.now()
+
+        if (assinatura.tipo == TipoAssinatura.FREE) {
+            if (assinatura.status != StatusAssinatura.CANCELADA && assinatura.status != StatusAssinatura.SUSPENSA) {
+                assinatura.status = StatusAssinatura.ATIVA
+            }
+            return
+        }
 
         if (agora.isAfter(assinatura.dataVencimento)) {
             when (assinatura.status) {

@@ -15,6 +15,7 @@ import Alertas from './pages/Alertas';
 import Veterinarios from './pages/Veterinarios';
 import Configuracoes from './pages/Configuracoes';
 import Assinatura from './pages/Assinatura';
+import GestaoFazendas from './pages/GestaoFazendas';
 import { getToken } from './services/session';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -48,6 +49,7 @@ function App() {
           <Route path="relatorios" element={<Relatorios />} />
           <Route path="alertas" element={<Alertas />} />
           <Route path="veterinarios" element={<Veterinarios />} />
+          <Route path="fazendas" element={<GestaoFazendas />} />
           <Route path="assinatura" element={<Assinatura />} />
           <Route path="configuracoes" element={<Configuracoes />} />
         </Route>

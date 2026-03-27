@@ -6,12 +6,18 @@ plugins {
 	kotlin("plugin.jpa") version "1.9.24"
 }
 
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 group = "com.example"
 version = "0.0.1-SNAPSHOT"
 
+val detectedJavaVersion = JavaVersion.current().majorVersion.toInt()
+val toolchainVersion = ((findProperty("javaToolchainVersion") as String?)?.toIntOrNull())
+	?: if (detectedJavaVersion >= 17) detectedJavaVersion else 17
+
 java {
 	toolchain {
-		languageVersion = JavaLanguageVersion.of(17)
+		languageVersion = JavaLanguageVersion.of(toolchainVersion)
 	}
 }
 
@@ -33,8 +39,10 @@ dependencies {
 	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0")
 
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+	implementation("org.flywaydb:flyway-core")
 
 	runtimeOnly("com.h2database:h2")
+	runtimeOnly("org.postgresql:postgresql")
 
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 
@@ -49,12 +57,18 @@ dependencies {
 }
 
 kotlin {
+	jvmToolchain(toolchainVersion)
 	compilerOptions {
+		jvmTarget.set(JvmTarget.JVM_17)
 		freeCompilerArgs.addAll(
 				"-Xjsr305=strict",
 				"-Xannotation-default-target=param-property"
 		)
 	}
+}
+
+tasks.withType<JavaCompile> {
+	options.release.set(17)
 }
 
 tasks.withType<Test> {

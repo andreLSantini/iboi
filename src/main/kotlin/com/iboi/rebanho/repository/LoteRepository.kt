@@ -17,4 +17,6 @@ interface LoteRepository : JpaRepository<Lote, UUID> {
     fun findByFarmIdAndAtivo(farmId: UUID, ativo: Boolean, pageable: Pageable): Page<Lote>
 
     fun existsByNomeAndFarmId(nome: String, farmId: UUID): Boolean
+
+    fun findByFarmIdAndNomeIgnoreCase(farmId: UUID, nome: String): Lote?
 }

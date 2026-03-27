@@ -13,6 +13,9 @@ import java.util.*
 
 interface AnimalRepository : JpaRepository<Animal, UUID> {
 
+    @Query("SELECT COUNT(a) FROM Animal a WHERE a.farm.empresa.id = :empresaId")
+    fun countByEmpresaId(@Param("empresaId") empresaId: UUID): Long
+
     fun findByFarmIdAndStatus(farmId: UUID, status: StatusAnimal): List<Animal>
 
     fun findByFarmId(farmId: UUID): List<Animal>
@@ -20,6 +23,10 @@ interface AnimalRepository : JpaRepository<Animal, UUID> {
     fun findByBrincoAndFarmId(brinco: String, farmId: UUID): Animal?
 
     fun existsByBrincoAndFarmId(brinco: String, farmId: UUID): Boolean
+
+    fun existsByRfidAndFarmId(rfid: String, farmId: UUID): Boolean
+
+    fun existsByCodigoSisbov(codigoSisbov: String): Boolean
 
     fun findByLoteId(loteId: UUID): List<Animal>
 

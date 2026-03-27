@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 const items = [
   'Cadastro self-service com ativacao imediata',
-  'Trial de 30 dias com bloqueio de assinatura',
+  'Plano Free com entrada imediata e upgrade por valor entregue',
   'Area autenticada com modulos operacionais',
   'Billing pronto para ligar com gateway real',
 ];
@@ -25,13 +25,13 @@ export default function Landing() {
               Cadastre sua operacao e comece a usar no mesmo dia.
             </h1>
             <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
-              O fluxo de onboarding ja cria empresa, fazenda, usuario administrador e trial de 30 dias
-              para o cliente entrar e operar sem falar com o time.
+              O fluxo de onboarding ja cria empresa, fazenda e usuario administrador
+              para o cliente entrar no plano Free e operar sem falar com o time.
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <button onClick={() => navigate('/onboarding')} className="btn-primary flex items-center justify-center gap-2 px-6 py-3">
-                Comecar trial
+                Comecar gratis
                 <ArrowRight className="h-5 w-5" />
               </button>
               <button onClick={() => navigate('/login')} className="btn-secondary px-6 py-3">
@@ -57,7 +57,7 @@ export default function Landing() {
               </div>
               <p className="mt-4 text-4xl font-black">30 dias</p>
               <p className="mt-2 text-sm text-slate-300">
-                Trial automatico com acesso imediato ao produto.
+                Plano Free com acesso imediato ao produto.
               </p>
             </div>
 
@@ -67,7 +67,7 @@ export default function Landing() {
                 <p className="font-semibold text-slate-900">Billing SaaS</p>
               </div>
               <ul className="mt-4 space-y-3 text-sm text-slate-600">
-                <li>Trial com expiracao</li>
+                 <li>Plano Free com limite por volume</li>
                 <li>Upgrade de plano</li>
                 <li>Historico de pagamentos</li>
                 <li>Pronto para integrar com gateway real</li>

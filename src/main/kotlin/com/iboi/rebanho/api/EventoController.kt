@@ -1,5 +1,7 @@
 package com.iboi.rebanho.api
 
+import com.iboi.plano.model.PlanoRecurso
+import com.iboi.plano.service.PlanoAcessoService
 import com.iboi.rebanho.api.dto.AnimalResumoDto
 import com.iboi.rebanho.api.dto.EventoDto
 import com.iboi.rebanho.api.dto.LoteResumoDto
@@ -30,6 +32,7 @@ import java.util.UUID
 @RequestMapping("/api/eventos")
 @Tag(name = "Eventos", description = "Registro de eventos do rebanho")
 class EventoController(
+        private val planoAcessoService: PlanoAcessoService,
         private val eventoRepository: EventoRepository,
         private val registrarEventoUseCase: RegistrarEventoUseCase
 ) {
@@ -44,6 +47,15 @@ class EventoController(
             ]
     )
     fun registrar(@Valid @RequestBody request: RegistrarEventoRequest): ResponseEntity<EventoDto> {
+        planoAcessoService.requireRecurso(
+                SecurityUtils.currentEmpresaId(),
+                when (request.tipo) {
+                    TipoEvento.PESAGEM -> PlanoRecurso.PESAGEM
+                    TipoEvento.VACINA -> PlanoRecurso.VACINACAO
+                    else -> PlanoRecurso.CADASTRO_COMPLETO
+                },
+                "O registro operacional deste evento faz parte do plano Basic ou superior."
+        )
         val evento = registrarEventoUseCase.execute(
                 SecurityUtils.currentFarmId(),
                 SecurityUtils.currentEmail(),

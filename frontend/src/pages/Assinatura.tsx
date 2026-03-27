@@ -1,14 +1,57 @@
-import { useEffect, useState } from 'react';
-import { AlertTriangle, CheckCircle2, Copy, CreditCard, ExternalLink, Loader2, QrCode } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { AlertTriangle, CheckCircle2, Copy, CreditCard, ExternalLink, Loader2, QrCode, Sparkles } from 'lucide-react';
 import api from '../services/api';
-import { getSubscriptionReason } from '../services/session';
-import type { AssinaturaDto, HistoricoPagamento, MetodoPagamento, PeriodoPagamento, TipoAssinatura } from '../types';
+import { clearSubscriptionReason, getSubscriptionReason } from '../services/session';
+import type {
+  AssinaturaDto,
+  HistoricoPagamento,
+  MetodoPagamento,
+  PeriodoPagamento,
+  PlanoRecurso,
+  TipoAssinatura,
+} from '../types';
 
-const planos: Array<{ tipo: TipoAssinatura; titulo: string; descricao: string }> = [
-  { tipo: 'BASIC', titulo: 'Basic', descricao: 'Plano enxuto para operacoes menores.' },
-  { tipo: 'PRO', titulo: 'Pro', descricao: 'Mais capacidade para escalar o uso.' },
-  { tipo: 'ENTERPRISE', titulo: 'Enterprise', descricao: 'Camada premium para contas maiores.' },
+const planos: Array<{
+  tipo: TipoAssinatura;
+  titulo: string;
+  subtitulo: string;
+  preco: Record<PeriodoPagamento, string>;
+  recursos: PlanoRecurso[];
+}> = [
+  {
+    tipo: 'BASIC',
+    titulo: 'Basic',
+    subtitulo: 'Cadastro completo, pesagem, vacinas e manejo operacional.',
+    preco: { MENSAL: 'R$ 79', SEMESTRAL: 'R$ 426,60', ANUAL: 'R$ 758,40' },
+    recursos: ['CADASTRO_COMPLETO', 'PESAGEM', 'VACINACAO', 'MOVIMENTACAO'],
+  },
+  {
+    tipo: 'PRO',
+    titulo: 'Pro',
+    subtitulo: 'Relatorios e leitura economica para tomar decisoes melhores.',
+    preco: { MENSAL: 'R$ 199', SEMESTRAL: 'R$ 1.074', ANUAL: 'R$ 1.908' },
+    recursos: ['RELATORIOS', 'FINANCEIRO_POR_ANIMAL', 'CUSTO_POR_CABECA'],
+  },
+  {
+    tipo: 'PREMIUM',
+    titulo: 'Premium',
+    subtitulo: 'Camada decisoria com IA, predicao e recomendacoes.',
+    preco: { MENSAL: 'R$ 399', SEMESTRAL: 'R$ 2.154', ANUAL: 'R$ 3.828' },
+    recursos: ['IA_DECISAO'],
+  },
 ];
+
+const recursoLabel: Record<PlanoRecurso, string> = {
+  CADASTRO_BASICO: 'Cadastro basico',
+  CADASTRO_COMPLETO: 'Cadastro completo',
+  PESAGEM: 'Pesagem',
+  VACINACAO: 'Vacinacao',
+  MOVIMENTACAO: 'Movimentacao',
+  RELATORIOS: 'Relatorios',
+  FINANCEIRO_POR_ANIMAL: 'Financeiro por animal',
+  CUSTO_POR_CABECA: 'Custo por cabeca',
+  IA_DECISAO: 'IA decisoria',
+};
 
 export default function Assinatura() {
   const [assinatura, setAssinatura] = useState<AssinaturaDto | null>(null);
@@ -33,10 +76,13 @@ export default function Assinatura() {
         api.get<HistoricoPagamento[]>('/api/pagamento/historico'),
       ]);
 
-      const historicoOrdenado = historicoRes.data;
       setAssinatura(assinaturaRes.data);
-      setHistorico(historicoOrdenado);
-      setCobrancaAtual(historicoOrdenado.find((item) => item.status === 'PENDENTE') ?? null);
+      setHistorico(historicoRes.data);
+      setCobrancaAtual(historicoRes.data.find((item) => item.status === 'PENDENTE') ?? null);
+
+      if (assinaturaRes.data.status === 'TRIAL' || assinaturaRes.data.status === 'ATIVA') {
+        clearSubscriptionReason();
+      }
     } catch (error) {
       console.error('Erro ao carregar assinatura', error);
     } finally {
@@ -51,7 +97,7 @@ export default function Assinatura() {
     try {
       await api.post('/api/assinatura/upgrade', { novoPlano, periodo });
       await carregar();
-      setMensagem('Plano atualizado. Agora gere a cobranca no Asaas para concluir o upgrade.');
+      setMensagem('Plano selecionado. Gere a cobranca no Asaas para ativar a nova camada.');
     } catch (error: any) {
       setMensagem(error.response?.data?.message || 'Nao foi possivel atualizar o plano agora.');
     } finally {
@@ -68,7 +114,7 @@ export default function Assinatura() {
       const pagamento = response.data.pagamento as HistoricoPagamento | undefined;
       await carregar();
       setCobrancaAtual(pagamento ?? null);
-      setMensagem('Cobranca criada no Asaas. Use o link ou QR code abaixo para pagar.');
+      setMensagem('Cobranca criada no Asaas. Use o link, boleto ou QR code abaixo para concluir.');
     } catch (error: any) {
       setMensagem(error.response?.data?.message || 'Nao foi possivel gerar a cobranca agora.');
     } finally {
@@ -82,6 +128,9 @@ export default function Assinatura() {
     setMensagem('Codigo PIX copiado.');
   }
 
+  const recursosAtivos = useMemo(() => assinatura?.recursos ?? [], [assinatura]);
+  const usoAnimais = assinatura?.limiteAnimais ? `${assinatura.animaisCadastrados}/${assinatura.limiteAnimais}` : `${assinatura?.animaisCadastrados ?? 0}`;
+
   if (loading) {
     return (
       <div className="flex h-64 items-center justify-center">
@@ -94,17 +143,13 @@ export default function Assinatura() {
     <div className="space-y-6">
       <div className={`card border-2 ${bloqueado ? 'border-amber-300 bg-amber-50' : 'border-primary-200 bg-primary-50'}`}>
         <div className="flex items-start gap-3">
-          {bloqueado ? (
-            <AlertTriangle className="mt-1 h-6 w-6 text-amber-600" />
-          ) : (
-            <CheckCircle2 className="mt-1 h-6 w-6 text-primary-600" />
-          )}
+          {bloqueado ? <AlertTriangle className="mt-1 h-6 w-6 text-amber-600" /> : <CheckCircle2 className="mt-1 h-6 w-6 text-primary-600" />}
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">Assinatura</h1>
+            <h1 className="text-2xl font-bold text-slate-900">Assinatura e monetizacao</h1>
             <p className="text-sm text-slate-600">
               {bloqueado
-                ? 'Seu acesso operacional depende da regularizacao do plano.'
-                : 'Billing conectado ao Asaas para emissao de cobrancas e reconciliacao por webhook.'}
+                ? 'Seu acesso pago esta pendente. Regularize a cobranca para liberar os modulos premium.'
+                : 'O produto agora segue a linha Free, Basic, Pro e Premium com gatilhos por valor entregue.'}
             </p>
           </div>
         </div>
@@ -112,28 +157,48 @@ export default function Assinatura() {
 
       {mensagem && <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm">{mensagem}</div>}
 
-      <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+      <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
         <div className="space-y-6">
           <div className="card">
-            <h2 className="text-lg font-bold text-slate-900">Resumo atual</h2>
-            <div className="mt-5 grid gap-4 md:grid-cols-3">
+            <h2 className="text-lg font-bold text-slate-900">Plano atual</h2>
+            <div className="mt-5 grid gap-4 md:grid-cols-4">
               <div className="rounded-2xl bg-slate-50 p-4">
                 <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Plano</p>
-                <p className="mt-2 text-xl font-bold text-slate-900">{assinatura?.tipo ?? 'N/A'}</p>
+                <p className="mt-2 text-xl font-bold text-slate-900">{assinatura?.tituloPlano ?? assinatura?.tipo ?? 'N/A'}</p>
               </div>
               <div className="rounded-2xl bg-slate-50 p-4">
                 <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Status</p>
                 <p className="mt-2 text-xl font-bold text-slate-900">{assinatura?.status ?? 'N/A'}</p>
               </div>
               <div className="rounded-2xl bg-slate-50 p-4">
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Animais</p>
+                <p className="mt-2 text-xl font-bold text-slate-900">{usoAnimais}</p>
+              </div>
+              <div className="rounded-2xl bg-slate-50 p-4">
                 <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Dias restantes</p>
                 <p className="mt-2 text-xl font-bold text-slate-900">{assinatura?.diasRestantes ?? 0}</p>
               </div>
             </div>
+            <p className="mt-4 text-sm text-slate-600">{assinatura?.descricaoPlano}</p>
+
+            <div className="mt-5 flex flex-wrap gap-2">
+              {recursosAtivos.map((recurso) => (
+                <span key={recurso} className="rounded-full bg-primary-100 px-3 py-1 text-xs font-medium text-primary-700">
+                  {recursoLabel[recurso]}
+                </span>
+              ))}
+            </div>
           </div>
 
           <div className="card">
-            <h2 className="text-lg font-bold text-slate-900">Escolha um plano</h2>
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">Subir de nivel</h2>
+                <p className="text-sm text-slate-600">Voce nao esta vendendo software de gestao. Voce esta vendendo decisao pecuaria.</p>
+              </div>
+              <Sparkles className="h-6 w-6 text-primary-600" />
+            </div>
+
             <div className="mt-4 flex flex-wrap gap-2">
               {(['MENSAL', 'SEMESTRAL', 'ANUAL'] as PeriodoPagamento[]).map((item) => (
                 <button key={item} onClick={() => setPeriodo(item)} className={periodo === item ? 'btn-primary' : 'btn-secondary'}>
@@ -144,12 +209,20 @@ export default function Assinatura() {
 
             <div className="mt-6 grid gap-4 lg:grid-cols-3">
               {planos.map((plano) => (
-                <div key={plano.tipo} className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
+                <div key={plano.tipo} className={`rounded-3xl border p-5 ${assinatura?.tipo === plano.tipo ? 'border-primary-400 bg-primary-50' : 'border-slate-200 bg-slate-50'}`}>
                   <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{plano.tipo}</p>
                   <h3 className="mt-2 text-xl font-bold text-slate-900">{plano.titulo}</h3>
-                  <p className="mt-2 text-sm text-slate-600">{plano.descricao}</p>
-                  <button onClick={() => void upgrade(plano.tipo)} disabled={saving} className="btn-primary mt-5 w-full">
-                    Selecionar plano
+                  <p className="mt-1 text-2xl font-bold text-slate-900">{plano.preco[periodo]}</p>
+                  <p className="mt-2 text-sm text-slate-600">{plano.subtitulo}</p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {plano.recursos.map((recurso) => (
+                      <span key={recurso} className="rounded-full bg-white px-3 py-1 text-xs text-slate-700">
+                        {recursoLabel[recurso]}
+                      </span>
+                    ))}
+                  </div>
+                  <button onClick={() => void upgrade(plano.tipo)} disabled={saving || assinatura?.tipo === plano.tipo} className="btn-primary mt-5 w-full">
+                    {assinatura?.tipo === plano.tipo ? 'Plano atual' : 'Selecionar plano'}
                   </button>
                 </div>
               ))}
@@ -162,8 +235,8 @@ export default function Assinatura() {
             <div className="flex items-center gap-3">
               <CreditCard className="h-6 w-6 text-primary-600" />
               <div>
-                <h2 className="text-lg font-bold text-slate-900">Gerar cobranca no Asaas</h2>
-                <p className="text-sm text-slate-600">PIX e boleto estao prontos. Cartao fica para a proxima camada de checkout.</p>
+                <h2 className="text-lg font-bold text-slate-900">Cobranca Asaas</h2>
+                <p className="text-sm text-slate-600">PIX e boleto prontos para upgrade. Cartao fica para a proxima camada.</p>
               </div>
             </div>
 
@@ -175,7 +248,7 @@ export default function Assinatura() {
               ))}
             </div>
 
-            <button onClick={() => void gerarCobranca()} disabled={saving} className="btn-primary mt-5 w-full">
+            <button onClick={() => void gerarCobranca()} disabled={saving || assinatura?.tipo === 'FREE'} className="btn-primary mt-5 w-full">
               {saving ? 'Gerando...' : 'Gerar cobranca'}
             </button>
           </div>
@@ -206,11 +279,7 @@ export default function Assinatura() {
                 )}
 
                 {cobrancaAtual.pixEncodedImage && (
-                  <img
-                    src={`data:image/png;base64,${cobrancaAtual.pixEncodedImage}`}
-                    alt="QR code PIX"
-                    className="mx-auto w-56 rounded-2xl border border-slate-200 bg-white p-3"
-                  />
+                  <img src={`data:image/png;base64,${cobrancaAtual.pixEncodedImage}`} alt="QR code PIX" className="mx-auto w-56 rounded-2xl border border-slate-200 bg-white p-3" />
                 )}
 
                 {cobrancaAtual.pixPayload && (

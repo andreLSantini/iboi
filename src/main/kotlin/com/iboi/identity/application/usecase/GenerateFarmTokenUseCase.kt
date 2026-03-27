@@ -21,6 +21,7 @@ class GenerateFarmTokenUseCase(
         return jwtService.generateToken(
                 user = profile.usuario,
                 permissions = permissions,
+                defaultFarmId = farmId
         )
     }
 }

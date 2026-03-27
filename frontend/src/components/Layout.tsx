@@ -1,10 +1,12 @@
 import { useState } from 'react';
+import { useEffect } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   Activity,
   AlertCircle,
   BarChart3,
   Beef,
+  Building,
   Calendar,
   CreditCard,
   DollarSign,
@@ -17,16 +19,21 @@ import {
   X,
 } from 'lucide-react';
 import logo from '../assets/logo_transparente.png';
-import { clearSession, getUser } from '../services/session';
+import api from '../services/api';
+import { clearSession, getCurrentFarm, getFarms, getUser, storeAuthSession } from '../services/session';
+import type { FarmSummary, LoginResponse } from '../types';
 
 export default function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const user = getUser();
+  const currentFarm = getCurrentFarm();
+  const farms = getFarms();
 
   const menuItems = [
     { icon: Home, label: 'Dashboard', path: '/app/dashboard' },
+    { icon: Building, label: 'Gestao de Fazendas', path: '/app/fazendas' },
     { icon: Beef, label: 'Animais', path: '/app/animais' },
     { icon: Package, label: 'Lotes', path: '/app/lotes' },
     { icon: Activity, label: 'Eventos', path: '/app/eventos' },
@@ -43,6 +50,22 @@ export default function Layout() {
     clearSession();
     navigate('/login');
   };
+
+  const handleFarmChange = async (farmId: string) => {
+    try {
+      const response = await api.post<LoginResponse>('/api/farms/select', { farmId });
+      storeAuthSession(response.data);
+      window.location.href = '/app/dashboard';
+    } catch (error) {
+      console.error('Erro ao trocar fazenda', error);
+    }
+  };
+
+  useEffect(() => {
+    if (!currentFarm && farms.length > 0) {
+      void handleFarmChange(farms[0].id);
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -64,9 +87,25 @@ export default function Layout() {
           </div>
 
           <div className="flex items-center gap-4">
+            {farms.length > 0 && (
+              <select
+                value={currentFarm?.id ?? ''}
+                onChange={(e) => void handleFarmChange(e.target.value)}
+                className="hidden rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm md:block"
+              >
+                {farms.map((farm: FarmSummary) => (
+                  <option key={farm.id} value={farm.id}>
+                    {farm.name}
+                  </option>
+                ))}
+              </select>
+            )}
+
             <div className="hidden text-right sm:block">
               <p className="text-sm font-medium text-gray-900">{user?.nome ?? 'Conta'}</p>
-              <p className="text-xs text-gray-500">{user?.farmRole ?? 'Admin'}</p>
+              <p className="text-xs text-gray-500">
+                {currentFarm?.nome ?? 'Fazenda'} - {user?.farmRole ?? 'Admin'}
+              </p>
             </div>
             <button onClick={handleLogout} className="rounded-lg p-2 text-gray-600 hover:bg-gray-100">
               <LogOut className="h-5 w-5" />
@@ -83,7 +122,7 @@ export default function Layout() {
         <nav className="space-y-1 p-4">
           {menuItems.map((item) => {
             const Icon = item.icon;
-            const active = location.pathname === item.path;
+            const active = location.pathname === item.path || location.pathname.startsWith(`${item.path}/`);
             return (
               <button
                 key={item.path}

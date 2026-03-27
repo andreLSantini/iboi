@@ -1,12 +1,11 @@
-import { Bell, Building, CreditCard, Settings, User } from 'lucide-react';
+import { Bell, CreditCard, Settings, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function Configuracoes() {
   const navigate = useNavigate();
 
   const sections = [
-    { icon: User, titulo: 'Perfil', descricao: 'Edite suas informacoes pessoais.' },
-    { icon: Building, titulo: 'Empresa', descricao: 'Gerencie os dados da empresa e da fazenda.' },
+    { icon: User, titulo: 'Perfil', descricao: 'Edite suas informacoes pessoais e dados da conta.' },
     {
       icon: CreditCard,
       titulo: 'Assinatura',
@@ -19,14 +18,14 @@ export default function Configuracoes() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <Settings className="w-8 h-8 text-primary-600" />
+        <Settings className="h-8 w-8 text-primary-600" />
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Configuracoes</h1>
-          <p className="text-gray-600">Ajustes operacionais e administrativos da conta.</p>
+          <p className="text-gray-600">Ajustes pessoais, assinatura e preferencias gerais da conta.</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
         {sections.map((section) => {
           const Icon = section.icon;
           return (

@@ -1,5 +1,7 @@
 package com.iboi.financeiro.api
 
+import com.iboi.plano.model.PlanoRecurso
+import com.iboi.plano.service.PlanoAcessoService
 import com.iboi.financeiro.api.dto.DespesaDto
 import com.iboi.financeiro.api.dto.RegistrarDespesaRequest
 import com.iboi.financeiro.api.dto.ResumoDespesasPorCategoria
@@ -26,6 +28,7 @@ import java.util.UUID
 @RequestMapping("/api/despesas")
 @Tag(name = "Despesas", description = "Gestao de custos e despesas da fazenda")
 class DespesaController(
+        private val planoAcessoService: PlanoAcessoService,
         private val registrarDespesaUseCase: RegistrarDespesaUseCase,
         private val despesaRepository: DespesaRepository
 ) {
@@ -33,6 +36,11 @@ class DespesaController(
     @PostMapping
     @Operation(summary = "Registrar despesa")
     fun registrar(@RequestBody request: RegistrarDespesaRequest): ResponseEntity<DespesaDto> {
+        planoAcessoService.requireRecurso(
+                SecurityUtils.currentEmpresaId(),
+                PlanoRecurso.FINANCEIRO_POR_ANIMAL,
+                "Controle financeiro faz parte do plano Pro ou superior."
+        )
         val despesa = registrarDespesaUseCase.execute(
                 getFarmIdFromAuth(),
                 getEmailFromAuth(),
@@ -47,6 +55,11 @@ class DespesaController(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) dataInicio: LocalDate?,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) dataFim: LocalDate?
     ): ResponseEntity<List<DespesaDto>> {
+        planoAcessoService.requireRecurso(
+                SecurityUtils.currentEmpresaId(),
+                PlanoRecurso.FINANCEIRO_POR_ANIMAL,
+                "Controle financeiro faz parte do plano Pro ou superior."
+        )
         val farmId = getFarmIdFromAuth()
 
         val despesas = if (dataInicio != null && dataFim != null) {
@@ -77,6 +90,11 @@ class DespesaController(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) dataInicio: LocalDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) dataFim: LocalDate
     ): ResponseEntity<List<ResumoDespesasPorCategoria>> {
+        planoAcessoService.requireRecurso(
+                SecurityUtils.currentEmpresaId(),
+                PlanoRecurso.CUSTO_POR_CABECA,
+                "Resumo de custos faz parte do plano Pro ou superior."
+        )
         val resultado = despesaRepository.sumByFarmIdAndDataBetweenGroupByCategoria(
                 getFarmIdFromAuth(),
                 dataInicio,

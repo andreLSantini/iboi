@@ -1,6 +1,7 @@
 package com.iboi.plano.api.dto
 
 import com.iboi.plano.model.PeriodoPagamento
+import com.iboi.plano.model.PlanoRecurso
 import com.iboi.plano.model.StatusAssinatura
 import com.iboi.plano.model.TipoAssinatura
 import java.math.BigDecimal
@@ -16,7 +17,12 @@ data class AssinaturaDto(
         val dataVencimento: LocalDateTime,
         val proximaCobranca: LocalDateTime?,
         val valor: BigDecimal?,
-        val diasRestantes: Long
+        val diasRestantes: Long,
+        val tituloPlano: String,
+        val descricaoPlano: String,
+        val limiteAnimais: Int?,
+        val animaisCadastrados: Long,
+        val recursos: List<PlanoRecurso>
 )
 
 data class UpgradeRequest(

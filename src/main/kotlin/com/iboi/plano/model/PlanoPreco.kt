@@ -8,20 +8,28 @@ object PlanoPreco {
             TipoAssinatura.TRIAL to mapOf(
                     PeriodoPagamento.MENSAL to BigDecimal.ZERO
             ),
+            TipoAssinatura.FREE to mapOf(
+                    PeriodoPagamento.MENSAL to BigDecimal.ZERO
+            ),
             TipoAssinatura.BASIC to mapOf(
-                    PeriodoPagamento.MENSAL to BigDecimal("99.00"),
-                    PeriodoPagamento.SEMESTRAL to BigDecimal("534.00"),
-                    PeriodoPagamento.ANUAL to BigDecimal("948.00")
+                    PeriodoPagamento.MENSAL to BigDecimal("79.00"),
+                    PeriodoPagamento.SEMESTRAL to BigDecimal("426.60"),
+                    PeriodoPagamento.ANUAL to BigDecimal("758.40")
             ),
             TipoAssinatura.PRO to mapOf(
                     PeriodoPagamento.MENSAL to BigDecimal("199.00"),
                     PeriodoPagamento.SEMESTRAL to BigDecimal("1074.00"),
                     PeriodoPagamento.ANUAL to BigDecimal("1908.00")
             ),
-            TipoAssinatura.ENTERPRISE to mapOf(
+            TipoAssinatura.PREMIUM to mapOf(
                     PeriodoPagamento.MENSAL to BigDecimal("399.00"),
                     PeriodoPagamento.SEMESTRAL to BigDecimal("2154.00"),
                     PeriodoPagamento.ANUAL to BigDecimal("3828.00")
+            ),
+            TipoAssinatura.ENTERPRISE to mapOf(
+                    PeriodoPagamento.MENSAL to BigDecimal("799.00"),
+                    PeriodoPagamento.SEMESTRAL to BigDecimal("4314.60"),
+                    PeriodoPagamento.ANUAL to BigDecimal("7670.40")
             )
     )
 

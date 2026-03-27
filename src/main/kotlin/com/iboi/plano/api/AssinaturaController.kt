@@ -4,6 +4,8 @@ import com.iboi.plano.api.dto.AssinaturaDto
 import com.iboi.plano.api.dto.CancelarAssinaturaRequest
 import com.iboi.plano.api.dto.UpgradeRequest
 import com.iboi.plano.repository.AssinaturaRepository
+import com.iboi.plano.service.AssinaturaService
+import com.iboi.plano.service.PlanoAcessoService
 import com.iboi.plano.usecase.CancelarAssinaturaUseCase
 import com.iboi.plano.usecase.UpgradeAssinaturaUseCase
 import com.iboi.shared.security.SecurityUtils
@@ -20,6 +22,8 @@ import java.time.LocalDateTime
 @RequestMapping("/api/assinatura")
 class AssinaturaController(
         private val assinaturaRepository: AssinaturaRepository,
+        private val assinaturaService: AssinaturaService,
+        private val planoAcessoService: PlanoAcessoService,
         private val upgradeAssinaturaUseCase: UpgradeAssinaturaUseCase,
         private val cancelarAssinaturaUseCase: CancelarAssinaturaUseCase
 ) {
@@ -29,8 +33,11 @@ class AssinaturaController(
         val assinatura = assinaturaRepository.findByEmpresaId(SecurityUtils.currentEmpresaId())
                 ?: return ResponseEntity.notFound().build()
 
+        assinaturaService.verificarEAtualizarStatus(assinatura)
+        val resumoPlano = planoAcessoService.resumo(SecurityUtils.currentEmpresaId())
+
         val agora = LocalDateTime.now()
-        val diasRestantes = Duration.between(agora, assinatura.dataVencimento).toDays()
+        val diasRestantes = maxOf(0, Duration.between(agora, assinatura.dataVencimento).toDays())
 
         val dto = AssinaturaDto(
                 id = assinatura.id!!,
@@ -41,7 +48,12 @@ class AssinaturaController(
                 dataVencimento = assinatura.dataVencimento,
                 proximaCobranca = assinatura.proximaCobranca,
                 valor = assinatura.valor,
-                diasRestantes = diasRestantes
+                diasRestantes = diasRestantes,
+                tituloPlano = resumoPlano.titulo,
+                descricaoPlano = resumoPlano.descricao,
+                limiteAnimais = resumoPlano.limiteAnimais,
+                animaisCadastrados = resumoPlano.animaisCadastrados,
+                recursos = resumoPlano.recursos.toList()
         )
 
         return ResponseEntity.ok(dto)

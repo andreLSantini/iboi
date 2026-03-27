@@ -22,13 +22,15 @@ import type {
   CategoriaAnimal,
   Raca,
   StatusAnimal,
-  LoteDto
+  LoteDto,
+  Pasture
 } from '../types/index';
 
 export default function Animais() {
   const navigate = useNavigate();
   const [animais, setAnimais] = useState<AnimalDto[]>([]);
   const [lotes, setLotes] = useState<LoteDto[]>([]);
+  const [pastos, setPastos] = useState<Pasture[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
@@ -50,19 +52,25 @@ export default function Animais() {
 
   const [formData, setFormData] = useState<CadastrarAnimalRequest>({
     brinco: '',
+    rfid: '',
+    codigoSisbov: '',
     nome: '',
     sexo: 'MACHO',
     raca: 'NELORE',
     dataNascimento: '',
+    dataEntrada: '',
     pesoAtual: undefined,
     categoria: 'BEZERRO',
     loteId: undefined,
+    pastureId: undefined,
+    sisbovAtivo: false,
     observacoes: ''
   });
 
   useEffect(() => {
     loadAnimais();
     loadLotes();
+    loadPastos();
   }, []);
 
   const loadAnimais = async () => {
@@ -91,6 +99,20 @@ export default function Animais() {
     }
   };
 
+  const loadPastos = async () => {
+    try {
+      const farmsRaw = localStorage.getItem('current_farm');
+      const farm = farmsRaw ? JSON.parse(farmsRaw) : null;
+      if (!farm?.id) {
+        return;
+      }
+      const response = await api.get(`/api/farms/${farm.id}/pastures`);
+      setPastos(Array.isArray(response.data) ? response.data : []);
+    } catch (error) {
+      console.error('Erro ao carregar pastos:', error);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -98,11 +120,16 @@ export default function Animais() {
     try {
       if (editingAnimal) {
         const updateData: AtualizarAnimalRequest = {
+          rfid: formData.rfid || undefined,
+          codigoSisbov: formData.codigoSisbov || undefined,
           nome: formData.nome || undefined,
           raca: formData.raca,
           pesoAtual: formData.pesoAtual,
           categoria: formData.categoria,
           loteId: formData.loteId,
+          pastureId: formData.pastureId,
+          dataEntrada: formData.dataEntrada || undefined,
+          sisbovAtivo: formData.sisbovAtivo,
           observacoes: formData.observacoes || undefined
         };
         await api.put(`/api/animais/${editingAnimal.id}`, updateData);
@@ -132,26 +159,36 @@ export default function Animais() {
       setEditingAnimal(animal);
       setFormData({
         brinco: animal.brinco,
+        rfid: animal.rfid || '',
+        codigoSisbov: animal.codigoSisbov || '',
         nome: animal.nome || '',
         sexo: animal.sexo,
         raca: animal.raca,
         dataNascimento: animal.dataNascimento,
+        dataEntrada: animal.dataEntrada || '',
         pesoAtual: animal.pesoAtual,
         categoria: animal.categoria,
         loteId: animal.lote?.id,
+        pastureId: animal.pasture?.id,
+        sisbovAtivo: animal.sisbovAtivo,
         observacoes: animal.observacoes || ''
       });
     } else {
       setEditingAnimal(null);
       setFormData({
         brinco: '',
+        rfid: '',
+        codigoSisbov: '',
         nome: '',
         sexo: 'MACHO',
         raca: 'NELORE',
         dataNascimento: '',
+        dataEntrada: '',
         pesoAtual: undefined,
         categoria: 'BEZERRO',
         loteId: undefined,
+        pastureId: undefined,
+        sisbovAtivo: false,
         observacoes: ''
       });
     }
@@ -431,7 +468,7 @@ export default function Animais() {
                   <td className="py-3 px-4">
                     <div className="flex items-center justify-end gap-2">
                       <button
-                        onClick={() => navigate(`/animais/${animal.id}`)}
+                        onClick={() => navigate(`/app/animais/${animal.id}`)}
                         className="p-2 hover:bg-blue-100 rounded-lg text-blue-600"
                         title="Ver detalhes"
                       >
@@ -537,6 +574,28 @@ export default function Animais() {
                 </div>
 
                 <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">RFID</label>
+                  <input
+                    type="text"
+                    value={formData.rfid || ''}
+                    onChange={(e) => setFormData({ ...formData, rfid: e.target.value })}
+                    className="input-field"
+                    placeholder="Ex: 789123456"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Codigo SISBOV</label>
+                  <input
+                    type="text"
+                    value={formData.codigoSisbov || ''}
+                    onChange={(e) => setFormData({ ...formData, codigoSisbov: e.target.value })}
+                    className="input-field"
+                    placeholder="Ex: BR123456789"
+                  />
+                </div>
+
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
                   <input
                     type="text"
@@ -544,6 +603,18 @@ export default function Animais() {
                     onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
                     className="input-field"
                     placeholder="Ex: Estrela"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Data de Entrada
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.dataEntrada || ''}
+                    onChange={(e) => setFormData({ ...formData, dataEntrada: e.target.value })}
+                    className="input-field"
                   />
                 </div>
 
@@ -631,6 +702,26 @@ export default function Animais() {
                   </select>
                 </div>
 
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Pasto Atual
+                  </label>
+                  <select
+                    value={formData.pastureId || ''}
+                    onChange={(e) =>
+                      setFormData({ ...formData, pastureId: e.target.value || undefined })
+                    }
+                    className="input-field"
+                  >
+                    <option value="">Sem pasto</option>
+                    {pastos.map((pasto) => (
+                      <option key={pasto.id} value={pasto.id}>
+                        {pasto.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Peso Atual (kg)
@@ -648,6 +739,17 @@ export default function Animais() {
                     className="input-field"
                     placeholder="Ex: 450.5"
                   />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="flex items-center gap-3 rounded-lg border border-gray-200 px-4 py-3">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(formData.sisbovAtivo)}
+                      onChange={(e) => setFormData({ ...formData, sisbovAtivo: e.target.checked })}
+                    />
+                    <span className="text-sm font-medium text-gray-700">Animal com SISBOV ativo</span>
+                  </label>
                 </div>
 
                 <div className="md:col-span-2">

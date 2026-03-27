@@ -31,6 +31,91 @@ export interface FarmSession {
 export interface FarmSummary {
   id: string;
   name: string;
+  city?: string;
+  state?: string;
+  productionType?: string;
+  size?: number;
+  active?: boolean;
+  pastureCount?: number;
+}
+
+export interface CadastrarFazendaRequest {
+  nome: string;
+  cidade: string;
+  estado: string;
+  tipoProducao: 'CORTE' | 'LEITE' | 'MISTO';
+  tamanho?: number;
+}
+
+export interface AtualizarFazendaRequest extends CadastrarFazendaRequest {
+  ownerName?: string;
+  ownerDocument?: string;
+  phone?: string;
+  email?: string;
+  addressLine?: string;
+  zipCode?: string;
+  latitude?: number;
+  longitude?: number;
+  legalStatus?: string;
+  documentProof?: string;
+  ccir?: string;
+  cib?: string;
+  car?: string;
+  mainExploration?: string;
+  estimatedCapacity?: number;
+  grazingArea?: number;
+  legalReserveArea?: number;
+  appArea?: number;
+  productiveArea?: number;
+}
+
+export interface FarmDetail {
+  id: string;
+  name: string;
+  city: string;
+  state: string;
+  productionType: 'CORTE' | 'LEITE' | 'MISTO';
+  size?: number;
+  ownerName?: string;
+  ownerDocument?: string;
+  phone?: string;
+  email?: string;
+  addressLine?: string;
+  zipCode?: string;
+  latitude?: number;
+  longitude?: number;
+  legalStatus?: string;
+  documentProof?: string;
+  ccir?: string;
+  cib?: string;
+  car?: string;
+  mainExploration?: string;
+  estimatedCapacity?: number;
+  grazingArea?: number;
+  legalReserveArea?: number;
+  appArea?: number;
+  productiveArea?: number;
+  active: boolean;
+}
+
+export interface Pasture {
+  id: string;
+  name: string;
+  areaHa?: number;
+  latitude?: number;
+  longitude?: number;
+  geoJson?: string;
+  notes?: string;
+  active: boolean;
+}
+
+export interface CadastrarPastoRequest {
+  nome: string;
+  areaHa?: number;
+  latitude: number;
+  longitude: number;
+  geoJson?: string;
+  notes?: string;
 }
 
 export interface AuthResponse {
@@ -49,10 +134,20 @@ export interface LoginRequest {
 export type LoginResponse = AuthResponse;
 export type OnboardingResponse = AuthResponse;
 
-export type TipoAssinatura = 'TRIAL' | 'BASIC' | 'PRO' | 'ENTERPRISE';
+export type TipoAssinatura = 'TRIAL' | 'FREE' | 'BASIC' | 'PRO' | 'PREMIUM' | 'ENTERPRISE';
 export type StatusAssinatura = 'TRIAL' | 'ATIVA' | 'VENCIDA' | 'CANCELADA' | 'SUSPENSA';
 export type PeriodoPagamento = 'MENSAL' | 'SEMESTRAL' | 'ANUAL';
 export type MetodoPagamento = 'CARTAO_CREDITO' | 'BOLETO' | 'PIX' | 'TRANSFERENCIA';
+export type PlanoRecurso =
+  | 'CADASTRO_BASICO'
+  | 'CADASTRO_COMPLETO'
+  | 'PESAGEM'
+  | 'VACINACAO'
+  | 'MOVIMENTACAO'
+  | 'RELATORIOS'
+  | 'FINANCEIRO_POR_ANIMAL'
+  | 'CUSTO_POR_CABECA'
+  | 'IA_DECISAO';
 
 export interface AssinaturaDto {
   id: string;
@@ -64,6 +159,11 @@ export interface AssinaturaDto {
   proximaCobranca?: string;
   valor?: number;
   diasRestantes: number;
+  tituloPlano: string;
+  descricaoPlano: string;
+  limiteAnimais?: number;
+  animaisCadastrados: number;
+  recursos: PlanoRecurso[];
 }
 
 export interface HistoricoPagamento {
@@ -104,15 +204,23 @@ export type Raca =
 export interface AnimalDto {
   id: string;
   brinco: string;
+  rfid?: string;
+  codigoSisbov?: string;
+  sisbovAtivo: boolean;
   nome?: string;
   sexo: Sexo;
   raca: Raca;
   dataNascimento: string;
+  dataEntrada?: string;
   idade: number;
   pesoAtual?: number;
   status: StatusAnimal;
   categoria: CategoriaAnimal;
   lote?: {
+    id: string;
+    nome: string;
+  };
+  pasture?: {
     id: string;
     nome: string;
   };
@@ -131,6 +239,8 @@ export interface AnimalDto {
 
 export interface CadastrarAnimalRequest {
   brinco: string;
+  rfid?: string;
+  codigoSisbov?: string;
   nome?: string;
   sexo: Sexo;
   raca: Raca;
@@ -138,18 +248,100 @@ export interface CadastrarAnimalRequest {
   pesoAtual?: number;
   categoria: CategoriaAnimal;
   loteId?: string;
+  pastureId?: string;
   paiId?: string;
   maeId?: string;
+  dataEntrada?: string;
+  sisbovAtivo?: boolean;
   observacoes?: string;
 }
 
 export interface AtualizarAnimalRequest {
+  rfid?: string;
+  codigoSisbov?: string;
   nome?: string;
   raca?: Raca;
   pesoAtual?: number;
   categoria?: CategoriaAnimal;
   loteId?: string;
+  pastureId?: string;
   status?: StatusAnimal;
+  dataEntrada?: string;
+  sisbovAtivo?: boolean;
+  observacoes?: string;
+}
+
+export interface ImportarAnimaisResponse {
+  totalLinhas: number;
+  importados: number;
+  ignorados: number;
+  erros: string[];
+}
+
+export type TipoMovimentacaoAnimal =
+  | 'ENTRE_PASTOS'
+  | 'ENTRE_FAZENDAS'
+  | 'SAIDA_EXTERNA'
+  | 'ENTRADA_EXTERNA';
+
+export type TipoVacina =
+  | 'AFTOSA'
+  | 'BRUCELOSE'
+  | 'CLOSTRIDIOSE'
+  | 'RAIVA'
+  | 'LEPTOSE'
+  | 'IBR_BVD'
+  | 'OUTRA';
+
+export interface MovimentacaoAnimalDto {
+  id: string;
+  tipo: TipoMovimentacaoAnimal;
+  movimentadaEm: string;
+  farmOrigem?: { id: string; nome: string };
+  farmDestino?: { id: string; nome: string };
+  pastureOrigem?: { id: string; nome: string };
+  pastureDestino?: { id: string; nome: string };
+  numeroGta?: string;
+  documentoExterno?: string;
+  motivo?: string;
+  observacoes?: string;
+  responsavel?: string;
+}
+
+export interface RegistrarMovimentacaoAnimalRequest {
+  tipo: TipoMovimentacaoAnimal;
+  movimentadaEm: string;
+  destinoFarmId?: string;
+  destinoPastureId?: string;
+  numeroGta?: string;
+  documentoExterno?: string;
+  motivo?: string;
+  observacoes?: string;
+}
+
+export interface VacinacaoAnimalDto {
+  id: string;
+  tipo: TipoVacina;
+  nomeVacina: string;
+  dose?: number;
+  unidadeMedida?: string;
+  aplicadaEm: string;
+  proximaDoseEm?: string;
+  fabricante?: string;
+  loteVacina?: string;
+  observacoes?: string;
+  responsavel?: string;
+}
+
+export interface RegistrarVacinacaoAnimalRequest {
+  tipo: TipoVacina;
+  nomeVacina: string;
+  dose?: number;
+  unidadeMedida?: string;
+  aplicadaEm: string;
+  proximaDoseEm?: string;
+  fabricante?: string;
+  loteVacina?: string;
   observacoes?: string;
 }
 

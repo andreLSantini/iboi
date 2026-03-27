@@ -1,5 +1,7 @@
 package com.iboi.ia.api
 
+import com.iboi.plano.model.PlanoRecurso
+import com.iboi.plano.service.PlanoAcessoService
 import com.iboi.ia.api.dto.AlertaDto
 import com.iboi.ia.domain.StatusAlerta
 import com.iboi.ia.repository.AlertaRepository
@@ -21,6 +23,7 @@ import java.util.UUID
 @RequestMapping("/api/alertas")
 @Tag(name = "Alertas IA", description = "Sistema inteligente de alertas e recomendacoes")
 class AlertaController(
+        private val planoAcessoService: PlanoAcessoService,
         private val alertaRepository: AlertaRepository,
         private val gerarAlertasUseCase: GerarAlertasUseCase
 ) {
@@ -28,6 +31,11 @@ class AlertaController(
     @GetMapping
     @Operation(summary = "Listar todos os alertas")
     fun listar(): ResponseEntity<List<AlertaDto>> {
+        planoAcessoService.requireRecurso(
+                SecurityUtils.currentEmpresaId(),
+                PlanoRecurso.IA_DECISAO,
+                "Alertas inteligentes fazem parte do plano Premium ou superior."
+        )
         val alertas = alertaRepository.findByFarmIdOrderByCriadoEmDesc(SecurityUtils.currentFarmId())
         return ResponseEntity.ok(alertas.map { toDto(it) })
     }
@@ -35,6 +43,11 @@ class AlertaController(
     @GetMapping("/ativos")
     @Operation(summary = "Listar alertas ativos", description = "Retorna apenas alertas nao lidos ou nao resolvidos")
     fun ativos(): ResponseEntity<List<AlertaDto>> {
+        planoAcessoService.requireRecurso(
+                SecurityUtils.currentEmpresaId(),
+                PlanoRecurso.IA_DECISAO,
+                "Alertas inteligentes fazem parte do plano Premium ou superior."
+        )
         val alertas = alertaRepository.findByFarmIdAndStatusOrderByPrioridadeDescCriadoEmDesc(
                 SecurityUtils.currentFarmId(),
                 StatusAlerta.ATIVO
@@ -45,6 +58,11 @@ class AlertaController(
     @PostMapping("/{id}/marcar-lido")
     @Operation(summary = "Marcar alerta como lido")
     fun marcarLido(@PathVariable id: UUID): ResponseEntity<Void> {
+        planoAcessoService.requireRecurso(
+                SecurityUtils.currentEmpresaId(),
+                PlanoRecurso.IA_DECISAO,
+                "Alertas inteligentes fazem parte do plano Premium ou superior."
+        )
         val alerta = alertaRepository.findById(id).orElse(null) ?: return ResponseEntity.notFound().build()
         alerta.status = StatusAlerta.LIDO
         alerta.lidoEm = LocalDateTime.now()
@@ -55,6 +73,11 @@ class AlertaController(
     @PostMapping("/{id}/resolver")
     @Operation(summary = "Marcar alerta como resolvido")
     fun resolver(@PathVariable id: UUID): ResponseEntity<Void> {
+        planoAcessoService.requireRecurso(
+                SecurityUtils.currentEmpresaId(),
+                PlanoRecurso.IA_DECISAO,
+                "Alertas inteligentes fazem parte do plano Premium ou superior."
+        )
         val alerta = alertaRepository.findById(id).orElse(null) ?: return ResponseEntity.notFound().build()
         alerta.status = StatusAlerta.RESOLVIDO
         alerta.resolvidoEm = LocalDateTime.now()
@@ -65,6 +88,11 @@ class AlertaController(
     @PostMapping("/gerar")
     @Operation(summary = "Gerar alertas (admin)", description = "Executa detectores de alertas e cria novos alertas")
     fun gerar(): ResponseEntity<Map<String, Int>> {
+        planoAcessoService.requireRecurso(
+                SecurityUtils.currentEmpresaId(),
+                PlanoRecurso.IA_DECISAO,
+                "Geracao de alertas inteligentes faz parte do plano Premium ou superior."
+        )
         val quantidade = gerarAlertasUseCase.execute(SecurityUtils.currentFarmId())
         return ResponseEntity.ok(mapOf("alertasGerados" to quantidade))
     }
