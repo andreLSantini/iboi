@@ -1,115 +1,110 @@
--- =====================================================
--- MIGRATION V1: Identity Module (Autenticação)
--- =====================================================
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
--- Tabela: Empresa (Tenant principal)
-CREATE TABLE empresa (
+CREATE TABLE empresas (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     nome VARCHAR(200) NOT NULL,
-    tipo VARCHAR(20) NOT NULL CHECK (tipo IN ('MATRIZ', 'FILIAL')),
-    cnpj VARCHAR(18),
-    criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    tipo VARCHAR(20) NOT NULL,
+    cnpj VARCHAR(18) UNIQUE,
+    empresa_matriz_id UUID,
+    asaas_customer_id VARCHAR(120),
+    ativa BOOLEAN NOT NULL DEFAULT TRUE,
+    criada_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- Tabela: Farm (Fazenda - contexto de negócio)
-CREATE TABLE farm (
+CREATE TABLE farms (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(200) NOT NULL,
     city VARCHAR(100) NOT NULL,
     state VARCHAR(2) NOT NULL,
-    production_type VARCHAR(20) NOT NULL CHECK (production_type IN ('CORTE', 'LEITE', 'MISTO')),
-    size DECIMAL(10,2),
-    empresa_id UUID NOT NULL REFERENCES empresa(id) ON DELETE CASCADE,
-    criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT uk_farm_name_empresa UNIQUE (name, empresa_id)
+    production_type VARCHAR(20) NOT NULL,
+    size DOUBLE PRECISION,
+    owner_name VARCHAR(150),
+    owner_document VARCHAR(40),
+    phone VARCHAR(30),
+    email VARCHAR(150),
+    address_line VARCHAR(255),
+    zip_code VARCHAR(20),
+    latitude DOUBLE PRECISION,
+    longitude DOUBLE PRECISION,
+    legal_status VARCHAR(60),
+    document_proof VARCHAR(255),
+    ccir VARCHAR(60),
+    cib VARCHAR(60),
+    car VARCHAR(60),
+    main_exploration VARCHAR(120),
+    estimated_capacity INT,
+    grazing_area DOUBLE PRECISION,
+    legal_reserve_area DOUBLE PRECISION,
+    app_area DOUBLE PRECISION,
+    productive_area DOUBLE PRECISION,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    empresa_id UUID NOT NULL REFERENCES empresas(id) ON DELETE CASCADE,
+    CONSTRAINT uk_farms_name_empresa UNIQUE (name, empresa_id)
 );
 
-CREATE INDEX idx_farm_empresa ON farm(empresa_id);
+CREATE INDEX idx_farms_empresa ON farms(empresa_id);
 
--- Tabela: Usuario
-CREATE TABLE usuario (
+CREATE TABLE usuarios (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     nome VARCHAR(150) NOT NULL,
     email VARCHAR(150) NOT NULL UNIQUE,
     telefone VARCHAR(20),
     senha_hash VARCHAR(255) NOT NULL,
-    role_enum VARCHAR(20) NOT NULL CHECK (role_enum IN ('ADMIN', 'USER')),
-    empresa_id UUID NOT NULL REFERENCES empresa(id) ON DELETE CASCADE,
-    ativo BOOLEAN NOT NULL DEFAULT TRUE,
-    criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    role_enum VARCHAR(20) NOT NULL,
+    empresa_id UUID NOT NULL REFERENCES empresas(id) ON DELETE CASCADE,
+    ativo BOOLEAN NOT NULL DEFAULT TRUE
 );
 
-CREATE INDEX idx_usuario_email ON usuario(email);
-CREATE INDEX idx_usuario_empresa ON usuario(empresa_id);
+CREATE INDEX idx_usuarios_email ON usuarios(email);
+CREATE INDEX idx_usuarios_empresa ON usuarios(empresa_id);
 
--- Tabela: Profile (Perfil básico)
-CREATE TABLE profile (
+CREATE TABLE profiles (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    usuario_id UUID NOT NULL REFERENCES usuario(id) ON DELETE CASCADE,
-    bio TEXT,
-    avatar_url VARCHAR(500),
-    criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT uk_profile_usuario UNIQUE (usuario_id)
+    name VARCHAR(100) NOT NULL
 );
 
--- Tabela: Role (Papel no sistema)
-CREATE TABLE role (
+CREATE TABLE roles (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    code VARCHAR(50) NOT NULL UNIQUE,
-    name VARCHAR(100) NOT NULL,
-    description TEXT
+    name VARCHAR(100) NOT NULL UNIQUE
 );
 
--- Tabela: Permission (Permissões)
-CREATE TABLE permission (
+CREATE TABLE permissions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    code VARCHAR(50) NOT NULL UNIQUE,
-    name VARCHAR(100) NOT NULL,
-    description TEXT
+    code VARCHAR(100) NOT NULL UNIQUE,
+    description VARCHAR(255) NOT NULL
 );
 
--- Tabela: RolePermission (Relação Role <-> Permission)
-CREATE TABLE role_permission (
+CREATE TABLE role_permissions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    role_id UUID NOT NULL REFERENCES role(id) ON DELETE CASCADE,
-    permission_id UUID NOT NULL REFERENCES permission(id) ON DELETE CASCADE,
-    CONSTRAINT uk_role_permission UNIQUE (role_id, permission_id)
+    role_id UUID NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+    permission_id UUID NOT NULL REFERENCES permissions(id) ON DELETE CASCADE,
+    CONSTRAINT uk_role_permissions UNIQUE (role_id, permission_id)
 );
 
--- Tabela: FarmRole (Papel dentro de uma fazenda)
-CREATE TABLE farm_role (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name VARCHAR(50) NOT NULL,
-    description TEXT
+CREATE TABLE profile_permissions (
+    profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    permission_id UUID NOT NULL REFERENCES permissions(id) ON DELETE CASCADE,
+    PRIMARY KEY (profile_id, permission_id)
 );
 
--- Inserir FarmRoles padrão
-INSERT INTO farm_role (id, name, description) VALUES
-('a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1', 'ADMIN', 'Administrador da fazenda'),
-('b2b2b2b2-b2b2-b2b2-b2b2-b2b2b2b2b2b2', 'MANAGER', 'Gerente da fazenda'),
-('c3c3c3c3-c3c3-c3c3-c3c3-c3c3c3c3c3c3', 'OPERATOR', 'Operador da fazenda'),
-('d4d4d4d4-d4d4-d4d4-d4d4-d4d4d4d4d4d4', 'VIEWER', 'Visualizador');
-
--- Tabela: UserFarmProfile (Usuário + Farm + Role)
-CREATE TABLE user_farm_profile (
+CREATE TABLE user_farm_profiles (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    usuario_id UUID NOT NULL REFERENCES usuario(id) ON DELETE CASCADE,
-    farm_id UUID NOT NULL REFERENCES farm(id) ON DELETE CASCADE,
-    role VARCHAR(20) NOT NULL CHECK (role IN ('ADMIN', 'MANAGER', 'OPERATOR', 'VIEWER')),
+    usuario_id UUID NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    farm_id UUID NOT NULL REFERENCES farms(id) ON DELETE CASCADE,
+    role VARCHAR(20) NOT NULL,
     is_default BOOLEAN NOT NULL DEFAULT FALSE,
-    criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT uk_user_farm UNIQUE (usuario_id, farm_id)
+    CONSTRAINT uk_user_farm_profiles UNIQUE (usuario_id, farm_id)
 );
 
-CREATE INDEX idx_ufp_usuario ON user_farm_profile(usuario_id);
-CREATE INDEX idx_ufp_farm ON user_farm_profile(farm_id);
+CREATE INDEX idx_user_farm_profiles_usuario ON user_farm_profiles(usuario_id);
+CREATE INDEX idx_user_farm_profiles_farm ON user_farm_profiles(farm_id);
 
--- Tabela: FarmModule (Módulos habilitados por fazenda)
-CREATE TABLE farm_module (
+CREATE TABLE farm_modules (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    farm_id UUID NOT NULL REFERENCES farm(id) ON DELETE CASCADE,
-    module_name VARCHAR(50) NOT NULL,
-    enabled BOOLEAN NOT NULL DEFAULT TRUE,
-    criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT uk_farm_module UNIQUE (farm_id, module_name)
+    farm_id UUID NOT NULL REFERENCES farms(id) ON DELETE CASCADE,
+    module_code VARCHAR(50) NOT NULL,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    CONSTRAINT uk_farm_modules UNIQUE (farm_id, module_code)
 );

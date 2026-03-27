@@ -1,3 +1,19 @@
+CREATE TABLE IF NOT EXISTS pastures (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(200) NOT NULL,
+    area_ha DOUBLE PRECISION,
+    latitude DOUBLE PRECISION,
+    longitude DOUBLE PRECISION,
+    geo_json VARCHAR(4000),
+    notes VARCHAR(1000),
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    farm_id UUID NOT NULL REFERENCES farms(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_pastures_farm ON pastures(farm_id);
+
 ALTER TABLE animais ADD COLUMN IF NOT EXISTS rfid VARCHAR(64);
 ALTER TABLE animais ADD COLUMN IF NOT EXISTS codigo_sisbov VARCHAR(64);
 ALTER TABLE animais ADD COLUMN IF NOT EXISTS pasture_id UUID;
@@ -9,12 +25,15 @@ CREATE INDEX IF NOT EXISTS idx_animal_sisbov ON animais(codigo_sisbov);
 CREATE INDEX IF NOT EXISTS idx_animal_pasture ON animais(pasture_id);
 
 ALTER TABLE animais
+    DROP CONSTRAINT IF EXISTS fk_animais_pasture;
+
+ALTER TABLE animais
     ADD CONSTRAINT fk_animais_pasture
     FOREIGN KEY (pasture_id) REFERENCES pastures(id);
 
 CREATE TABLE IF NOT EXISTS movimentacoes_animais (
-    id UUID PRIMARY KEY,
-    animal_id UUID NOT NULL REFERENCES animais(id),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    animal_id UUID NOT NULL REFERENCES animais(id) ON DELETE CASCADE,
     tipo VARCHAR(40) NOT NULL,
     farm_origem_id UUID REFERENCES farms(id),
     farm_destino_id UUID REFERENCES farms(id),
@@ -34,9 +53,9 @@ CREATE INDEX IF NOT EXISTS idx_movimentacao_farm ON movimentacoes_animais(farm_o
 CREATE INDEX IF NOT EXISTS idx_movimentacao_data ON movimentacoes_animais(movimentada_em);
 
 CREATE TABLE IF NOT EXISTS vacinacoes_animais (
-    id UUID PRIMARY KEY,
-    animal_id UUID NOT NULL REFERENCES animais(id),
-    farm_id UUID NOT NULL REFERENCES farms(id),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    animal_id UUID NOT NULL REFERENCES animais(id) ON DELETE CASCADE,
+    farm_id UUID NOT NULL REFERENCES farms(id) ON DELETE CASCADE,
     tipo VARCHAR(40) NOT NULL,
     nome_vacina VARCHAR(120) NOT NULL,
     dose NUMERIC(10,2),

@@ -1,56 +1,54 @@
--- =====================================================
--- MIGRATION V2: Plano/Assinatura Module
--- =====================================================
-
--- Tabela: Assinatura
-CREATE TABLE assinatura (
+CREATE TABLE assinaturas (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    empresa_id UUID NOT NULL REFERENCES empresa(id) ON DELETE CASCADE,
-    tipo VARCHAR(20) NOT NULL CHECK (tipo IN ('TRIAL', 'BASIC', 'PREMIUM', 'ENTERPRISE')),
-    status VARCHAR(20) NOT NULL CHECK (status IN ('TRIAL', 'ATIVA', 'SUSPENSA', 'CANCELADA', 'EXPIRADA')),
+    empresa_id UUID NOT NULL UNIQUE REFERENCES empresas(id) ON DELETE CASCADE,
+    tipo VARCHAR(20) NOT NULL,
+    status VARCHAR(20) NOT NULL,
+    periodo_pagamento VARCHAR(20),
     data_inicio TIMESTAMP NOT NULL,
     data_vencimento TIMESTAMP NOT NULL,
-    max_animais INT,
-    max_fazendas INT,
-    criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT uk_assinatura_empresa UNIQUE (empresa_id)
+    proxima_cobranca TIMESTAMP,
+    valor DECIMAL(10,2),
+    criada_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_assinatura_empresa ON assinatura(empresa_id);
-CREATE INDEX idx_assinatura_status ON assinatura(status);
+CREATE INDEX idx_assinaturas_empresa ON assinaturas(empresa_id);
+CREATE INDEX idx_assinaturas_status ON assinaturas(status);
 
--- Tabela: PlanoPreco
 CREATE TABLE plano_preco (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     nome VARCHAR(100) NOT NULL,
-    tipo VARCHAR(20) NOT NULL CHECK (tipo IN ('TRIAL', 'BASIC', 'PREMIUM', 'ENTERPRISE')),
+    tipo VARCHAR(20) NOT NULL UNIQUE,
     valor_mensal DECIMAL(10,2) NOT NULL,
-    max_animais INT,
-    max_fazendas INT,
     descricao TEXT,
     ativo BOOLEAN NOT NULL DEFAULT TRUE,
     criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- Inserir planos padrão
-INSERT INTO plano_preco (nome, tipo, valor_mensal, max_animais, max_fazendas, descricao, ativo) VALUES
-('Trial Gratuito', 'TRIAL', 0.00, 50, 1, 'Período experimental de 30 dias', TRUE),
-('Básico', 'BASIC', 49.90, 200, 2, 'Plano básico para pequenos produtores', TRUE),
-('Premium', 'PREMIUM', 99.90, 1000, 5, 'Plano completo com IA e relatórios avançados', TRUE),
-('Enterprise', 'ENTERPRISE', 299.90, NULL, NULL, 'Plano ilimitado para grandes fazendas', TRUE);
+INSERT INTO plano_preco (nome, tipo, valor_mensal, descricao, ativo) VALUES
+('Trial', 'TRIAL', 0.00, 'Acesso temporario completo para conhecer a plataforma.', TRUE),
+('Free', 'FREE', 0.00, 'Plano de entrada com limite de ate 50 animais.', TRUE),
+('Basic', 'BASIC', 79.00, 'Cadastro completo, pesagem, vacinacao e manejo operacional.', TRUE),
+('Pro', 'PRO', 199.00, 'Relatorios e leitura economica da fazenda.', TRUE),
+('Premium', 'PREMIUM', 399.00, 'Camada decisoria com IA, predicao e recomendacoes.', TRUE),
+('Enterprise', 'ENTERPRISE', 799.00, 'Conta corporativa e consultiva para operacoes maiores.', TRUE)
+ON CONFLICT (tipo) DO NOTHING;
 
--- Tabela: Pagamento
-CREATE TABLE pagamento (
+CREATE TABLE pagamentos (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    assinatura_id UUID NOT NULL REFERENCES assinatura(id) ON DELETE CASCADE,
+    assinatura_id UUID NOT NULL REFERENCES assinaturas(id) ON DELETE CASCADE,
     valor DECIMAL(10,2) NOT NULL,
-    data_pagamento TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    status VARCHAR(20) NOT NULL CHECK (status IN ('PENDENTE', 'APROVADO', 'RECUSADO', 'CANCELADO')),
-    metodo VARCHAR(50),
+    data_vencimento TIMESTAMP NOT NULL,
+    data_pagamento TIMESTAMP,
+    status VARCHAR(20) NOT NULL,
+    metodo_pagamento VARCHAR(40),
     transacao_id VARCHAR(255),
+    gateway_provider VARCHAR(80),
+    invoice_url VARCHAR(500),
+    bank_slip_url VARCHAR(500),
+    pix_payload VARCHAR(4000),
+    pix_encoded_image TEXT,
     criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_pagamento_assinatura ON pagamento(assinatura_id);
-CREATE INDEX idx_pagamento_status ON pagamento(status);
+CREATE INDEX idx_pagamentos_assinatura ON pagamentos(assinatura_id);
+CREATE INDEX idx_pagamentos_status ON pagamentos(status);

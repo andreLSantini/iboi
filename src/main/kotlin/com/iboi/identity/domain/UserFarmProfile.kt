@@ -10,7 +10,7 @@ import java.util.UUID
 @Table(
         name = "user_farm_profiles",
         uniqueConstraints = [
-                UniqueConstraint(columnNames = ["user_id", "farm_id"])
+                UniqueConstraint(columnNames = ["usuario_id", "farm_id"])
         ]
 )
 class UserFarmProfile(
