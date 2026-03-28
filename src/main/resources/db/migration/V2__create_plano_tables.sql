@@ -1,5 +1,5 @@
 CREATE TABLE assinaturas (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY,
     empresa_id UUID NOT NULL UNIQUE REFERENCES empresas(id) ON DELETE CASCADE,
     tipo VARCHAR(20) NOT NULL,
     status VARCHAR(20) NOT NULL,
@@ -15,7 +15,7 @@ CREATE INDEX idx_assinaturas_empresa ON assinaturas(empresa_id);
 CREATE INDEX idx_assinaturas_status ON assinaturas(status);
 
 CREATE TABLE plano_preco (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY,
     nome VARCHAR(100) NOT NULL,
     tipo VARCHAR(20) NOT NULL UNIQUE,
     valor_mensal DECIMAL(10,2) NOT NULL,
@@ -24,17 +24,32 @@ CREATE TABLE plano_preco (
     criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-INSERT INTO plano_preco (nome, tipo, valor_mensal, descricao, ativo) VALUES
-('Trial', 'TRIAL', 0.00, 'Acesso temporario completo para conhecer a plataforma.', TRUE),
-('Free', 'FREE', 0.00, 'Plano de entrada com limite de ate 50 animais.', TRUE),
-('Basic', 'BASIC', 79.00, 'Cadastro completo, pesagem, vacinacao e manejo operacional.', TRUE),
-('Pro', 'PRO', 199.00, 'Relatorios e leitura economica da fazenda.', TRUE),
-('Premium', 'PREMIUM', 399.00, 'Camada decisoria com IA, predicao e recomendacoes.', TRUE),
-('Enterprise', 'ENTERPRISE', 799.00, 'Conta corporativa e consultiva para operacoes maiores.', TRUE)
-ON CONFLICT (tipo) DO NOTHING;
+INSERT INTO plano_preco (id, nome, tipo, valor_mensal, descricao, ativo)
+SELECT RANDOM_UUID(), 'Trial', 'TRIAL', 0.00, 'Acesso temporario completo para conhecer a plataforma.', TRUE
+WHERE NOT EXISTS (SELECT 1 FROM plano_preco WHERE tipo = 'TRIAL');
+
+INSERT INTO plano_preco (id, nome, tipo, valor_mensal, descricao, ativo)
+SELECT RANDOM_UUID(), 'Free', 'FREE', 0.00, 'Plano de entrada com limite de ate 50 animais.', TRUE
+WHERE NOT EXISTS (SELECT 1 FROM plano_preco WHERE tipo = 'FREE');
+
+INSERT INTO plano_preco (id, nome, tipo, valor_mensal, descricao, ativo)
+SELECT RANDOM_UUID(), 'Basic', 'BASIC', 79.00, 'Cadastro completo, pesagem, vacinacao e manejo operacional.', TRUE
+WHERE NOT EXISTS (SELECT 1 FROM plano_preco WHERE tipo = 'BASIC');
+
+INSERT INTO plano_preco (id, nome, tipo, valor_mensal, descricao, ativo)
+SELECT RANDOM_UUID(), 'Pro', 'PRO', 199.00, 'Relatorios e leitura economica da fazenda.', TRUE
+WHERE NOT EXISTS (SELECT 1 FROM plano_preco WHERE tipo = 'PRO');
+
+INSERT INTO plano_preco (id, nome, tipo, valor_mensal, descricao, ativo)
+SELECT RANDOM_UUID(), 'Premium', 'PREMIUM', 399.00, 'Camada decisoria com IA, predicao e recomendacoes.', TRUE
+WHERE NOT EXISTS (SELECT 1 FROM plano_preco WHERE tipo = 'PREMIUM');
+
+INSERT INTO plano_preco (id, nome, tipo, valor_mensal, descricao, ativo)
+SELECT RANDOM_UUID(), 'Enterprise', 'ENTERPRISE', 799.00, 'Conta corporativa e consultiva para operacoes maiores.', TRUE
+WHERE NOT EXISTS (SELECT 1 FROM plano_preco WHERE tipo = 'ENTERPRISE');
 
 CREATE TABLE pagamentos (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY,
     assinatura_id UUID NOT NULL REFERENCES assinaturas(id) ON DELETE CASCADE,
     valor DECIMAL(10,2) NOT NULL,
     data_vencimento TIMESTAMP NOT NULL,

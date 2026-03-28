@@ -26,17 +26,25 @@ class ProcessarPagamentoUseCase(
 
         val valor = assinatura.valor
                 ?: throw IllegalStateException("Assinatura nao possui valor definido")
+        val periodoPagamento = assinatura.periodoPagamento
+                ?: throw IllegalStateException("Assinatura nao possui periodo de pagamento definido")
 
         val dueDate = assinatura.dataVencimento.toLocalDate()
-        val description = "Plano ${assinatura.tipo.name} - ${assinatura.periodoPagamento?.name ?: "MENSAL"}"
+        val description = "Plano ${assinatura.tipo.name} - ${periodoPagamento.name}"
 
         val charge = billingGateway.createCharge(
                 empresa = assinatura.empresa,
                 valor = valor,
                 metodoPagamento = request.metodoPagamento,
+                periodoPagamento = periodoPagamento,
                 dueDate = dueDate,
                 description = description
         )
+
+        if (!charge.recurringSubscriptionId.isNullOrBlank()) {
+            assinatura.asaasSubscriptionId = charge.recurringSubscriptionId
+            assinaturaRepository.save(assinatura)
+        }
 
         val pagamento = pagamentoRepository.save(
                 Pagamento(
@@ -47,6 +55,7 @@ class ProcessarPagamentoUseCase(
                         metodoPagamento = request.metodoPagamento,
                         transacaoId = charge.transactionId,
                         gatewayProvider = charge.provider,
+                        asaasSubscriptionId = charge.recurringSubscriptionId,
                         invoiceUrl = charge.invoiceUrl,
                         bankSlipUrl = charge.bankSlipUrl,
                         pixPayload = charge.pixPayload,

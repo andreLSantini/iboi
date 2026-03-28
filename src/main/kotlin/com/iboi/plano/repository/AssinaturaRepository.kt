@@ -6,4 +6,5 @@ import java.util.*
 
 interface AssinaturaRepository : JpaRepository<Assinatura, UUID> {
     fun findByEmpresaId(empresaId: UUID): Assinatura?
+    fun findByAsaasSubscriptionId(asaasSubscriptionId: String): Assinatura?
 }

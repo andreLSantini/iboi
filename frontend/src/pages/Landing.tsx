@@ -34,10 +34,10 @@ const pillars = [
 ];
 
 const highlights = [
-  'Plano Free para iniciar rapido e validar o produto na fazenda',
+  'Trial de entrada com o mesmo nucleo operacional do Basic para iniciar rapido',
   'Gestao de fazendas, pastos, lotes e ficha forte do animal',
   'Billing SaaS pronto para evoluir com upgrade e cobranca recorrente',
-  'Base preparada para score, previsao de peso e decisao economica',
+  'Base preparada para evoluir depois para score, previsao e decisao economica',
 ];
 
 const proof = [
@@ -75,24 +75,24 @@ const roadmap = [
 
 const plans = [
   {
-    name: 'Free',
-    price: 'Entrada imediata',
-    description: 'Comece com poucos animais e valide o produto sem friccao.',
+    name: 'Trial',
+    price: '30 dias para validar',
+    description: 'Mesmo nucleo operacional do Basic para testar a rotina e validar o produto com menos friccao.',
   },
   {
     name: 'Basic',
     price: 'Operacao do dia a dia',
-    description: 'Cadastro completo, pesagem, vacinas e rotina de campo.',
+    description: 'Cadastro completo, pesagem, vacinas, movimentacoes e relatorios simples.',
   },
   {
     name: 'Pro',
-    price: 'Gestao e resultado',
-    description: 'Relatorios, financeiro por animal e custo por cabeca.',
+    price: 'Em breve',
+    description: 'Futuro do produto para leitura economica e financeiro por animal.',
   },
   {
     name: 'Premium',
-    price: 'Decisao pecuaria',
-    description: 'Previsao, score, margem e recomendacoes para vender melhor.',
+    price: 'Em breve',
+    description: 'Futuro da camada decisoria com previsao, score e recomendacoes.',
   },
 ];
 
@@ -359,7 +359,7 @@ export default function Landing() {
               Entrar
             </button>
             <button onClick={() => navigate('/onboarding')} className="inline-flex items-center gap-2 rounded-full bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800">
-              Comecar gratis
+                  Comecar trial
               <ArrowRight className="h-4 w-4" />
             </button>
           </div>
@@ -389,7 +389,7 @@ export default function Landing() {
                   onClick={() => navigate('/onboarding')}
                   className="inline-flex items-center justify-center gap-2 rounded-full bg-primary-700 px-7 py-3.5 text-base font-semibold text-white shadow-[0_18px_40px_-18px_rgba(21,128,61,0.55)] transition hover:bg-primary-800"
                 >
-                  Criar conta gratis
+                  Criar conta trial
                   <ArrowRight className="h-5 w-5" />
                 </button>
                 <button
@@ -415,7 +415,7 @@ export default function Landing() {
               <div className="absolute inset-x-10 -top-6 h-32 rounded-full bg-primary-300/30 blur-3xl" />
               <div className="relative overflow-hidden rounded-[2rem] border border-slate-200/70 bg-[#111827] p-6 text-white shadow-[0_40px_100px_-35px_rgba(15,23,42,0.6)]">
                 <div className="absolute right-6 top-6 hidden rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-primary-100 md:block">
-                  Plano Free para entrar
+                  Trial para entrar
                 </div>
 
                 <div className="flex items-center gap-4">
@@ -588,7 +588,7 @@ export default function Landing() {
                   onClick={() => navigate('/onboarding')}
                   className="inline-flex items-center justify-center gap-2 rounded-full bg-primary-600 px-6 py-3.5 text-base font-semibold text-white transition hover:bg-primary-500"
                 >
-                  Criar conta gratis
+                  Criar conta trial
                   <ArrowRight className="h-5 w-5" />
                 </button>
                 <button

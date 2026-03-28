@@ -6,6 +6,7 @@ import com.iboi.relatorio.dto.DashboardResponse
 import com.iboi.relatorio.dto.HistoricoAnimalResponse
 import com.iboi.relatorio.dto.RelatorioFinanceiroResponse
 import com.iboi.relatorio.dto.RelatorioRebanhoResponse
+import com.iboi.relatorio.service.RelatorioPdfService
 import com.iboi.relatorio.usecase.DashboardUseCase
 import com.iboi.relatorio.usecase.HistoricoAnimalUseCase
 import com.iboi.relatorio.usecase.RelatorioFinanceiroUseCase
@@ -13,6 +14,8 @@ import com.iboi.relatorio.usecase.RelatorioRebanhoUseCase
 import com.iboi.shared.security.SecurityUtils
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.springframework.http.HttpHeaders
+import org.springframework.http.MediaType
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
@@ -31,7 +34,8 @@ class RelatorioController(
         private val relatorioRebanhoUseCase: RelatorioRebanhoUseCase,
         private val relatorioFinanceiroUseCase: RelatorioFinanceiroUseCase,
         private val historicoAnimalUseCase: HistoricoAnimalUseCase,
-        private val dashboardUseCase: DashboardUseCase
+        private val dashboardUseCase: DashboardUseCase,
+        private val relatorioPdfService: RelatorioPdfService
 ) {
 
     @GetMapping("/rebanho")
@@ -40,7 +44,7 @@ class RelatorioController(
         planoAcessoService.requireRecurso(
                 SecurityUtils.currentEmpresaId(),
                 PlanoRecurso.RELATORIOS,
-                "Relatorios avancados fazem parte do plano Pro ou superior."
+                "Relatorios simples fazem parte da camada operacional atual do BovCore."
         )
         return ResponseEntity.ok(relatorioRebanhoUseCase.execute(SecurityUtils.currentFarmId()))
     }
@@ -54,7 +58,7 @@ class RelatorioController(
         planoAcessoService.requireRecurso(
                 SecurityUtils.currentEmpresaId(),
                 PlanoRecurso.FINANCEIRO_POR_ANIMAL,
-                "Relatorio financeiro faz parte do plano Pro ou superior."
+                "O financeiro detalhado por animal sera liberado nas proximas camadas pagas."
         )
         val relatorio = relatorioFinanceiroUseCase.execute(SecurityUtils.currentFarmId(), dataInicio, dataFim)
         return ResponseEntity.ok(relatorio)
@@ -66,7 +70,7 @@ class RelatorioController(
         planoAcessoService.requireRecurso(
                 SecurityUtils.currentEmpresaId(),
                 PlanoRecurso.RELATORIOS,
-                "Historico consolidado faz parte do plano Pro ou superior."
+                "O historico consolidado faz parte da camada operacional atual do BovCore."
         )
         return ResponseEntity.ok(historicoAnimalUseCase.execute(id))
     }
@@ -77,8 +81,40 @@ class RelatorioController(
         planoAcessoService.requireRecurso(
                 SecurityUtils.currentEmpresaId(),
                 PlanoRecurso.RELATORIOS,
-                "Dashboard gerencial faz parte do plano Pro ou superior."
+                "O dashboard operacional faz parte da camada atual do BovCore."
         )
         return ResponseEntity.ok(dashboardUseCase.execute(SecurityUtils.currentFarmId()))
+    }
+
+    @GetMapping(value = ["/exportar/fazenda.pdf"], produces = [MediaType.APPLICATION_PDF_VALUE])
+    @Operation(summary = "Exportar PDF da fazenda", description = "Gera um PDF com o resumo operacional e relatorios simples da fazenda")
+    fun exportarRelatorioFazendaPdf(): ResponseEntity<ByteArray> {
+        planoAcessoService.requireRecurso(
+                SecurityUtils.currentEmpresaId(),
+                PlanoRecurso.RELATORIOS,
+                "Relatorios simples fazem parte da camada operacional atual do BovCore."
+        )
+
+        val pdf = relatorioPdfService.exportarRelatorioFazendaPdf(SecurityUtils.currentFarmId())
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=relatorio-fazenda-bovcore.pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf)
+    }
+
+    @GetMapping(value = ["/exportar/animal/{id}.pdf"], produces = [MediaType.APPLICATION_PDF_VALUE])
+    @Operation(summary = "Exportar PDF do animal", description = "Gera um PDF com a ficha e o historico consolidado do animal")
+    fun exportarHistoricoAnimalPdf(@PathVariable id: UUID): ResponseEntity<ByteArray> {
+        planoAcessoService.requireRecurso(
+                SecurityUtils.currentEmpresaId(),
+                PlanoRecurso.RELATORIOS,
+                "O historico consolidado faz parte da camada operacional atual do BovCore."
+        )
+
+        val pdf = relatorioPdfService.exportarHistoricoAnimalPdf(id)
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=relatorio-animal-bovcore.pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf)
     }
 }

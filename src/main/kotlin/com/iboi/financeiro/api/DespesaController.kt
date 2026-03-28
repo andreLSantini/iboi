@@ -39,7 +39,7 @@ class DespesaController(
         planoAcessoService.requireRecurso(
                 SecurityUtils.currentEmpresaId(),
                 PlanoRecurso.FINANCEIRO_POR_ANIMAL,
-                "Controle financeiro faz parte do plano Pro ou superior."
+                "O controle financeiro detalhado sera liberado nas proximas camadas pagas."
         )
         val despesa = registrarDespesaUseCase.execute(
                 getFarmIdFromAuth(),
@@ -58,7 +58,7 @@ class DespesaController(
         planoAcessoService.requireRecurso(
                 SecurityUtils.currentEmpresaId(),
                 PlanoRecurso.FINANCEIRO_POR_ANIMAL,
-                "Controle financeiro faz parte do plano Pro ou superior."
+                "O controle financeiro detalhado sera liberado nas proximas camadas pagas."
         )
         val farmId = getFarmIdFromAuth()
 
@@ -93,7 +93,7 @@ class DespesaController(
         planoAcessoService.requireRecurso(
                 SecurityUtils.currentEmpresaId(),
                 PlanoRecurso.CUSTO_POR_CABECA,
-                "Resumo de custos faz parte do plano Pro ou superior."
+                "O resumo avancado de custos sera liberado nas proximas camadas pagas."
         )
         val resultado = despesaRepository.sumByFarmIdAndDataBetweenGroupByCategoria(
                 getFarmIdFromAuth(),

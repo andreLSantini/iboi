@@ -39,6 +39,9 @@ class Pagamento(
         @Column(nullable = true)
         var gatewayProvider: String? = null,
 
+        @Column(name = "asaas_subscription_id", nullable = true, length = 255)
+        var asaasSubscriptionId: String? = null,
+
         @Column(nullable = true, length = 500)
         var invoiceUrl: String? = null,
 

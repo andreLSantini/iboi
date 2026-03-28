@@ -26,20 +26,26 @@ class UpgradeAssinaturaUseCase(
             throw IllegalArgumentException("Nao e possivel fazer upgrade para o plano de entrada")
         }
 
+        if (request.novoPlano == TipoAssinatura.PRO || request.novoPlano == TipoAssinatura.PREMIUM || request.novoPlano == TipoAssinatura.ENTERPRISE) {
+            throw IllegalArgumentException("Este plano ainda esta em fase futura. Por enquanto, contrate o Basic.")
+        }
+
         if (assinatura.tipo == request.novoPlano && assinatura.status == StatusAssinatura.ATIVA) {
             throw IllegalArgumentException("Empresa ja possui este plano ativo")
         }
 
         val valor = PlanoPreco.getValor(request.novoPlano, request.periodo)
         val agora = LocalDateTime.now()
-        val proximaCobranca = assinaturaService.calcularProximaCobranca(agora, request.periodo)
+        val baseRenovacao = if (assinatura.dataVencimento.isAfter(agora)) assinatura.dataVencimento else agora
+        val proximaCobranca = assinaturaService.calcularProximaCobranca(baseRenovacao, request.periodo)
 
         assinatura.tipo = request.novoPlano
         assinatura.status = StatusAssinatura.VENCIDA
         assinatura.periodoPagamento = request.periodo
-        assinatura.dataVencimento = agora.plusDays(7)
+        assinatura.dataVencimento = baseRenovacao
         assinatura.proximaCobranca = proximaCobranca
         assinatura.valor = valor
+        assinatura.asaasSubscriptionId = null
 
         assinaturaRepository.save(assinatura)
     }

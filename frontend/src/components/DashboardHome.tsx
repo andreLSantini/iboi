@@ -427,11 +427,11 @@ export default function DashboardHome() {
       <div className="card">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-bold text-gray-900">Free e billing</h3>
-            <p className="text-sm text-gray-600">Acompanhe seu plano atual e destrave camadas pagas conforme a operacao cresce.</p>
+            <h3 className="text-lg font-bold text-gray-900">Plano atual e evolucao comercial</h3>
+            <p className="text-sm text-gray-600">Hoje o BovCore vende o nucleo operacional. As camadas estrategicas entram depois, quando estiverem redondas.</p>
           </div>
           <button onClick={() => navigate('/app/assinatura')} className="btn-primary">
-            Fazer upgrade
+            Ver assinatura
           </button>
         </div>
       </div>
@@ -493,7 +493,7 @@ export default function DashboardHome() {
             <div>
               <p className="font-semibold">Ativacao ainda incompleta</p>
               <p className="mt-1">
-                Quanto mais cedo voce concluir a configuracao da fazenda e subir o rebanho, mais rapido o sistema passa a gerar relatorios, alertas e recomendacoes uteis.
+                Quanto mais cedo voce concluir a configuracao da fazenda e subir o rebanho, mais rapido o sistema passa a gerar relatorios simples e leitura operacional confiavel.
               </p>
             </div>
           </div>

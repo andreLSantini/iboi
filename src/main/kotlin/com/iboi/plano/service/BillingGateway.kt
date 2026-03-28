@@ -2,6 +2,7 @@ package com.iboi.plano.service
 
 import com.iboi.identity.domain.Empresa
 import com.iboi.plano.model.MetodoPagamento
+import com.iboi.plano.model.PeriodoPagamento
 import java.math.BigDecimal
 import java.time.LocalDate
 
@@ -10,6 +11,7 @@ interface BillingGateway {
             empresa: Empresa,
             valor: BigDecimal,
             metodoPagamento: MetodoPagamento,
+            periodoPagamento: PeriodoPagamento,
             dueDate: LocalDate,
             description: String
     ): BillingChargeResult
@@ -19,6 +21,7 @@ data class BillingChargeResult(
         val success: Boolean,
         val transactionId: String,
         val provider: String,
+        val recurringSubscriptionId: String? = null,
         val invoiceUrl: String? = null,
         val bankSlipUrl: String? = null,
         val pixPayload: String? = null,

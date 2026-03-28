@@ -20,24 +20,37 @@ const planos: Array<{
   recursos: PlanoRecurso[];
 }> = [
   {
+    tipo: 'TRIAL',
+    titulo: 'Trial',
+    subtitulo: 'Mesmo nucleo operacional do Basic por 30 dias, com limite inicial de ate 50 animais.',
+    preco: { MENSAL: '30 dias', SEMESTRAL: '30 dias', ANUAL: '30 dias' },
+    recursos: ['CADASTRO_COMPLETO', 'PESAGEM', 'VACINACAO', 'MOVIMENTACAO', 'RELATORIOS'],
+  },
+  {
     tipo: 'BASIC',
     titulo: 'Basic',
-    subtitulo: 'Cadastro completo, pesagem, vacinas e manejo operacional.',
+    subtitulo: 'Operacao completa com manejo, sanidade e relatorios simples.',
     preco: { MENSAL: 'R$ 79', SEMESTRAL: 'R$ 426,60', ANUAL: 'R$ 758,40' },
-    recursos: ['CADASTRO_COMPLETO', 'PESAGEM', 'VACINACAO', 'MOVIMENTACAO'],
+    recursos: ['CADASTRO_COMPLETO', 'PESAGEM', 'VACINACAO', 'MOVIMENTACAO', 'RELATORIOS'],
   },
+];
+
+const planosFuturos: Array<{
+  tipo: TipoAssinatura;
+  titulo: string;
+  subtitulo: string;
+  recursos: PlanoRecurso[];
+}> = [
   {
     tipo: 'PRO',
     titulo: 'Pro',
-    subtitulo: 'Relatorios e leitura economica para tomar decisoes melhores.',
-    preco: { MENSAL: 'R$ 199', SEMESTRAL: 'R$ 1.074', ANUAL: 'R$ 1.908' },
-    recursos: ['RELATORIOS', 'FINANCEIRO_POR_ANIMAL', 'CUSTO_POR_CABECA'],
+    subtitulo: 'Em breve: leitura economica, financeiro por animal e custo por cabeca.',
+    recursos: ['FINANCEIRO_POR_ANIMAL', 'CUSTO_POR_CABECA'],
   },
   {
     tipo: 'PREMIUM',
     titulo: 'Premium',
-    subtitulo: 'Camada decisoria com IA, predicao e recomendacoes.',
-    preco: { MENSAL: 'R$ 399', SEMESTRAL: 'R$ 2.154', ANUAL: 'R$ 3.828' },
+    subtitulo: 'Em breve: previsoes, score do animal e inteligencia de decisao.',
     recursos: ['IA_DECISAO'],
   },
 ];
@@ -67,6 +80,7 @@ export default function Assinatura() {
   const [empresaForm, setEmpresaForm] = useState({ nome: '', cnpj: '' });
 
   const bloqueado = getSubscriptionReason() === 'SUBSCRIPTION_INACTIVE' || assinatura?.status === 'VENCIDA';
+  const acessoPreservado = Boolean(assinatura && assinatura.diasRestantes > 0);
 
   useEffect(() => {
     void carregar();
@@ -179,12 +193,33 @@ export default function Assinatura() {
             <h1 className="text-2xl font-bold text-slate-900">Assinatura e monetizacao</h1>
             <p className="text-sm text-slate-600">
               {bloqueado
-                ? 'Seu acesso pago esta pendente. Regularize a cobranca para liberar os modulos premium.'
-                : 'O produto agora segue a linha Free, Basic, Pro e Premium com gatilhos por valor entregue.'}
+                ? 'Seu acesso pago esta pendente. Regularize a cobranca para liberar o plano contratado.'
+                : 'Hoje vendemos apenas o que ja esta redondo: Trial e Basic. Pro e Premium aparecem como proximas camadas.'}
             </p>
           </div>
         </div>
       </div>
+
+      {assinatura && acessoPreservado && (
+        <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-4 text-sm text-sky-900 shadow-sm">
+          <p className="font-semibold">Seu periodo atual esta preservado.</p>
+          <p className="mt-1">
+            Se voce gerar a renovacao agora, o BovCore mantem os {assinatura.diasRestantes} dias restantes e soma o novo ciclo a partir do vencimento atual.
+          </p>
+        </div>
+      )}
+
+      {bloqueado && (
+        <div className="rounded-2xl border border-amber-200 bg-white px-4 py-4 text-sm text-slate-700 shadow-sm">
+          <p className="font-semibold text-slate-900">Como regularizar agora</p>
+          <div className="mt-2 space-y-1">
+            <p>1. Confira nome e CPF/CNPJ da empresa abaixo.</p>
+            <p>2. Selecione o plano e o metodo de pagamento.</p>
+            <p>3. Gere a cobranca e conclua o pagamento no Asaas.</p>
+            <p>4. O webhook ativa a licenca automaticamente quando o pagamento for confirmado.</p>
+          </div>
+        </div>
+      )}
 
       {mensagem && <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm">{mensagem}</div>}
 
@@ -224,8 +259,8 @@ export default function Assinatura() {
           <div className="card">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-lg font-bold text-slate-900">Subir de nivel</h2>
-                <p className="text-sm text-slate-600">Voce nao esta vendendo software de gestao. Voce esta vendendo decisao pecuaria.</p>
+                <h2 className="text-lg font-bold text-slate-900">Planos disponiveis agora</h2>
+                <p className="text-sm text-slate-600">O foco comercial neste momento e o nucleo operacional que ja esta pronto para uso real.</p>
               </div>
               <Sparkles className="h-6 w-6 text-primary-600" />
             </div>
@@ -252,11 +287,43 @@ export default function Assinatura() {
                       </span>
                     ))}
                   </div>
-                  <button onClick={() => void upgrade(plano.tipo)} disabled={saving || assinatura?.tipo === plano.tipo} className="btn-primary mt-5 w-full">
+                  <button onClick={() => void upgrade(plano.tipo)} disabled={saving || assinatura?.tipo === plano.tipo || plano.tipo === 'TRIAL'} className="btn-primary mt-5 w-full">
                     {assinatura?.tipo === plano.tipo ? 'Plano atual' : 'Selecionar plano'}
                   </button>
                 </div>
               ))}
+            </div>
+
+            <div className="mt-8">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">Camadas futuras</h3>
+                  <p className="text-sm text-slate-600">Mostramos o caminho do produto, mas sem vender o que ainda nao esta pronto.</p>
+                </div>
+                <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-amber-800">
+                  em breve
+                </span>
+              </div>
+
+              <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                {planosFuturos.map((plano) => (
+                  <div key={plano.tipo} className="rounded-3xl border border-dashed border-slate-300 bg-white p-5">
+                    <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{plano.tipo}</p>
+                    <h4 className="mt-2 text-xl font-bold text-slate-900">{plano.titulo}</h4>
+                    <p className="mt-2 text-sm text-slate-600">{plano.subtitulo}</p>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {plano.recursos.map((recurso) => (
+                        <span key={recurso} className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-700">
+                          {recursoLabel[recurso]}
+                        </span>
+                      ))}
+                    </div>
+                    <button disabled className="btn-secondary mt-5 w-full cursor-not-allowed opacity-70">
+                      Disponivel em breve
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -294,6 +361,7 @@ export default function Assinatura() {
 
               <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
                 <p>Cliente Asaas atual: <strong>{empresa?.asaasCustomerId ?? 'ainda nao criado'}</strong></p>
+                <p className="mt-1">Use um CPF ou CNPJ valido. Se o documento estiver incorreto, o Asaas recusa a cobranca.</p>
               </div>
 
               <button onClick={() => void salvarEmpresa()} disabled={saving} className="btn-secondary">
@@ -307,7 +375,7 @@ export default function Assinatura() {
               <CreditCard className="h-6 w-6 text-primary-600" />
               <div>
                 <h2 className="text-lg font-bold text-slate-900">Cobranca Asaas</h2>
-                <p className="text-sm text-slate-600">PIX e boleto prontos para upgrade. Cartao fica para a proxima camada.</p>
+                <p className="text-sm text-slate-600">PIX e boleto prontos para o Basic. Cartao e planos futuros ficam para a proxima camada.</p>
               </div>
             </div>
 
@@ -319,9 +387,13 @@ export default function Assinatura() {
               ))}
             </div>
 
-            <button onClick={() => void gerarCobranca()} disabled={saving || assinatura?.tipo === 'FREE'} className="btn-primary mt-5 w-full">
+            <button onClick={() => void gerarCobranca()} disabled={saving} className="btn-primary mt-5 w-full">
               {saving ? 'Gerando...' : 'Gerar cobranca'}
             </button>
+
+            <p className="mt-3 text-xs leading-5 text-slate-500">
+              A cobranca recorrente e criada no Asaas respeitando o seu periodo atual. Se ainda restam dias no plano ou trial, eles nao sao perdidos.
+            </p>
           </div>
 
           {cobrancaAtual && (

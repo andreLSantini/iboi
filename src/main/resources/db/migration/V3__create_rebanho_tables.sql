@@ -1,5 +1,5 @@
 CREATE TABLE lotes (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY,
     nome VARCHAR(100) NOT NULL,
     descricao VARCHAR(500),
     farm_id UUID NOT NULL REFERENCES farms(id) ON DELETE CASCADE,
@@ -12,7 +12,7 @@ CREATE INDEX idx_lotes_farm ON lotes(farm_id);
 CREATE INDEX idx_lotes_ativo ON lotes(ativo);
 
 CREATE TABLE animais (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY,
     brinco VARCHAR(50) NOT NULL,
     nome VARCHAR(100),
     sexo VARCHAR(10) NOT NULL,
@@ -37,7 +37,7 @@ CREATE INDEX idx_animal_status ON animais(status);
 CREATE INDEX idx_animal_lote ON animais(lote_id);
 
 CREATE TABLE eventos (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY,
     animal_id UUID NOT NULL REFERENCES animais(id) ON DELETE CASCADE,
     farm_id UUID NOT NULL REFERENCES farms(id) ON DELETE CASCADE,
     tipo VARCHAR(30) NOT NULL,

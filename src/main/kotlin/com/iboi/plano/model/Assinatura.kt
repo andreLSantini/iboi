@@ -41,6 +41,9 @@ class Assinatura(
         @Column(nullable = true, precision = 10, scale = 2)
         var valor: BigDecimal? = null,
 
+        @Column(name = "asaas_subscription_id", nullable = true, length = 255)
+        var asaasSubscriptionId: String? = null,
+
         @Column(nullable = false)
         val criadaEm: LocalDateTime = LocalDateTime.now()
 )

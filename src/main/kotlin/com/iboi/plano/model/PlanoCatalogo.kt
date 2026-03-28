@@ -14,7 +14,35 @@ object PlanoCatalogo {
             TipoAssinatura.TRIAL to PlanoDefinicao(
                     tipo = TipoAssinatura.TRIAL,
                     titulo = "Trial",
-                    descricao = "Acesso temporario completo para conhecer a plataforma.",
+                    descricao = "Acesso temporario ao nucleo operacional do produto para conhecer a plataforma antes da cobranca.",
+                    limiteAnimais = 50,
+                    recursos = setOf(
+                            PlanoRecurso.CADASTRO_BASICO,
+                            PlanoRecurso.CADASTRO_COMPLETO,
+                            PlanoRecurso.PESAGEM,
+                            PlanoRecurso.VACINACAO,
+                            PlanoRecurso.MOVIMENTACAO,
+                            PlanoRecurso.RELATORIOS
+                    )
+            ),
+            TipoAssinatura.FREE to PlanoDefinicao(
+                    tipo = TipoAssinatura.FREE,
+                    titulo = "Trial legado",
+                    descricao = "Plano legado mantido apenas para compatibilidade com contas antigas.",
+                    limiteAnimais = 50,
+                    recursos = setOf(
+                            PlanoRecurso.CADASTRO_BASICO,
+                            PlanoRecurso.CADASTRO_COMPLETO,
+                            PlanoRecurso.PESAGEM,
+                            PlanoRecurso.VACINACAO,
+                            PlanoRecurso.MOVIMENTACAO,
+                            PlanoRecurso.RELATORIOS
+                    )
+            ),
+            TipoAssinatura.BASIC to PlanoDefinicao(
+                    tipo = TipoAssinatura.BASIC,
+                    titulo = "Basic",
+                    descricao = "Operacao completa com manejo, sanidade e relatorios simples para a rotina da fazenda.",
                     limiteAnimais = null,
                     recursos = setOf(
                             PlanoRecurso.CADASTRO_BASICO,
@@ -22,36 +50,13 @@ object PlanoCatalogo {
                             PlanoRecurso.PESAGEM,
                             PlanoRecurso.VACINACAO,
                             PlanoRecurso.MOVIMENTACAO,
-                            PlanoRecurso.RELATORIOS,
-                            PlanoRecurso.FINANCEIRO_POR_ANIMAL,
-                            PlanoRecurso.CUSTO_POR_CABECA,
-                            PlanoRecurso.IA_DECISAO
-                    )
-            ),
-            TipoAssinatura.FREE to PlanoDefinicao(
-                    tipo = TipoAssinatura.FREE,
-                    titulo = "Free",
-                    descricao = "Entrada gratuita para iniciar a operacao e validar o produto.",
-                    limiteAnimais = 50,
-                    recursos = setOf(PlanoRecurso.CADASTRO_BASICO)
-            ),
-            TipoAssinatura.BASIC to PlanoDefinicao(
-                    tipo = TipoAssinatura.BASIC,
-                    titulo = "Basic",
-                    descricao = "Cadastro completo com operacao de manejo e sanidade.",
-                    limiteAnimais = null,
-                    recursos = setOf(
-                            PlanoRecurso.CADASTRO_BASICO,
-                            PlanoRecurso.CADASTRO_COMPLETO,
-                            PlanoRecurso.PESAGEM,
-                            PlanoRecurso.VACINACAO,
-                            PlanoRecurso.MOVIMENTACAO
+                            PlanoRecurso.RELATORIOS
                     )
             ),
             TipoAssinatura.PRO to PlanoDefinicao(
                     tipo = TipoAssinatura.PRO,
                     titulo = "Pro",
-                    descricao = "Camada gerencial com relatorios e leitura economica da fazenda.",
+                    descricao = "Camada futura para leitura economica da fazenda.",
                     limiteAnimais = null,
                     recursos = setOf(
                             PlanoRecurso.CADASTRO_BASICO,
@@ -67,7 +72,7 @@ object PlanoCatalogo {
             TipoAssinatura.PREMIUM to PlanoDefinicao(
                     tipo = TipoAssinatura.PREMIUM,
                     titulo = "Premium",
-                    descricao = "Plano decisorio com inteligencia preditiva e recomendacoes.",
+                    descricao = "Camada futura com inteligencia preditiva e recomendacoes.",
                     limiteAnimais = null,
                     recursos = setOf(
                             PlanoRecurso.CADASTRO_BASICO,

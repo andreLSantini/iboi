@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.iboi.identity.domain.Empresa
 import com.iboi.identity.infrastructure.repository.EmpresaRepository
 import com.iboi.plano.model.MetodoPagamento
+import com.iboi.plano.model.PeriodoPagamento
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.http.MediaType
@@ -33,6 +34,7 @@ class AsaasBillingGateway(
             empresa: Empresa,
             valor: BigDecimal,
             metodoPagamento: MetodoPagamento,
+            periodoPagamento: PeriodoPagamento,
             dueDate: LocalDate,
             description: String
     ): BillingChargeResult {
@@ -47,24 +49,37 @@ class AsaasBillingGateway(
             MetodoPagamento.CARTAO_CREDITO -> throw IllegalArgumentException("Cartao de credito exige checkout/tokenizacao especifica no Asaas")
             MetodoPagamento.TRANSFERENCIA -> throw IllegalArgumentException("Transferencia nao e suportada para cobrancas Asaas")
         }
+        val cycle = when (periodoPagamento) {
+            PeriodoPagamento.MENSAL -> "MONTHLY"
+            PeriodoPagamento.SEMESTRAL -> "SEMIANNUALLY"
+            PeriodoPagamento.ANUAL -> "YEARLY"
+        }
 
         try {
-            val payment = restClient.post()
-                    .uri("/v3/payments")
+            val subscription = restClient.post()
+                    .uri("/v3/subscriptions")
                     .body(
                             mapOf(
                                     "customer" to customerId,
                                     "billingType" to billingType,
+                                    "cycle" to cycle,
                                     "value" to valor,
-                                    "dueDate" to dueDate.toString(),
+                                    "nextDueDate" to dueDate.toString(),
                                     "description" to description
                             )
                     )
                     .retrieve()
-                    .body(AsaasPaymentResponse::class.java)
-                    ?: throw IllegalStateException("Asaas nao retornou a cobranca criada")
+                    .body(AsaasSubscriptionResponse::class.java)
+                    ?: throw IllegalStateException("Asaas nao retornou a assinatura recorrente criada")
 
-            val pixInfo = if (billingType == "PIX") {
+            val payment = restClient.get()
+                    .uri("/v3/subscriptions/${subscription.id}/payments")
+                    .retrieve()
+                    .body(AsaasPaymentListResponse::class.java)
+                    ?.data
+                    ?.firstOrNull()
+
+            val pixInfo = if (billingType == "PIX" && payment?.id != null) {
                 restClient.get()
                         .uri("/v3/payments/${payment.id}/pixQrCode")
                         .retrieve()
@@ -75,10 +90,11 @@ class AsaasBillingGateway(
 
             return BillingChargeResult(
                     success = true,
-                    transactionId = payment.id,
+                    transactionId = payment?.id ?: subscription.id,
                     provider = "asaas",
-                    invoiceUrl = payment.invoiceUrl,
-                    bankSlipUrl = payment.bankSlipUrl,
+                    recurringSubscriptionId = subscription.id,
+                    invoiceUrl = payment?.invoiceUrl,
+                    bankSlipUrl = payment?.bankSlipUrl,
                     pixPayload = pixInfo?.payload,
                     pixEncodedImage = pixInfo?.encodedImage
             )
@@ -135,7 +151,21 @@ class AsaasBillingGateway(
     data class AsaasPaymentResponse(
             val id: String,
             val invoiceUrl: String? = null,
-            val bankSlipUrl: String? = null
+            val bankSlipUrl: String? = null,
+            val subscription: String? = null,
+            val value: BigDecimal? = null,
+            val dueDate: String? = null,
+            val billingType: String? = null
+    )
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    data class AsaasPaymentListResponse(
+            val data: List<AsaasPaymentResponse> = emptyList()
+    )
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    data class AsaasSubscriptionResponse(
+            val id: String
     )
 
     @JsonIgnoreProperties(ignoreUnknown = true)

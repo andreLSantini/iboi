@@ -190,6 +190,37 @@ export interface HistoricoPagamento {
   pixEncodedImage?: string;
 }
 
+export interface DashboardResponse {
+  kpis: {
+    totalAnimaisAtivos: number;
+    nascimentosMes: number;
+    mortesMes: number;
+    despesasMes: number;
+    animaisPorCategoria: Record<string, number>;
+  };
+  eventosRecentes: {
+    data: string;
+    tipo: string;
+    animal: string;
+    descricao: string;
+  }[];
+  agendamentosProximos: {
+    dataPrevista: string;
+    tipo: string;
+    animal: string;
+    produto: string;
+  }[];
+}
+
+export interface RelatorioRebanhoResponse {
+  totalAnimais: number;
+  porCategoria: Record<string, number>;
+  porSexo: Record<string, number>;
+  porStatus: Record<string, number>;
+  idadeMediaMeses: number;
+  pesoMedio?: number | null;
+}
+
 export type Sexo = 'MACHO' | 'FEMEA';
 export type StatusAnimal = 'ATIVO' | 'VENDIDO' | 'MORTO' | 'DESCARTADO' | 'TRANSFERIDO';
 export type CategoriaAnimal = 'BEZERRO' | 'NOVILHO' | 'NOVILHA' | 'BOI' | 'VACA' | 'TOURO' | 'MATRIZ';

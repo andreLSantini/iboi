@@ -7,7 +7,7 @@ import com.iboi.plano.model.TipoAssinatura
 import com.iboi.plano.repository.AssinaturaRepository
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
-import java.util.*
+import java.util.UUID
 
 @Service
 class AssinaturaService(
@@ -18,21 +18,16 @@ class AssinaturaService(
         val assinatura = assinaturaRepository.findByEmpresaId(empresaId)
                 ?: return false
         verificarEAtualizarStatus(assinatura)
+        val agora = LocalDateTime.now()
 
         if (assinatura.tipo == TipoAssinatura.FREE) {
             return assinatura.status == StatusAssinatura.ATIVA
         }
 
         return when (assinatura.status) {
-            StatusAssinatura.TRIAL -> {
-                // Verificar se o trial ainda está válido
-                LocalDateTime.now().isBefore(assinatura.dataVencimento)
-            }
-            StatusAssinatura.ATIVA -> {
-                // Verificar se a assinatura ainda está válida
-                LocalDateTime.now().isBefore(assinatura.dataVencimento)
-            }
-            StatusAssinatura.VENCIDA,
+            StatusAssinatura.TRIAL -> agora.isBefore(assinatura.dataVencimento)
+            StatusAssinatura.ATIVA -> agora.isBefore(assinatura.dataVencimento)
+            StatusAssinatura.VENCIDA -> agora.isBefore(assinatura.dataVencimento)
             StatusAssinatura.CANCELADA,
             StatusAssinatura.SUSPENSA -> false
         }

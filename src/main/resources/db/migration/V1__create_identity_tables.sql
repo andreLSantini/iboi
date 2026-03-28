@@ -1,7 +1,5 @@
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
-
 CREATE TABLE empresas (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY,
     nome VARCHAR(200) NOT NULL,
     tipo VARCHAR(20) NOT NULL,
     cnpj VARCHAR(18) UNIQUE,
@@ -12,7 +10,7 @@ CREATE TABLE empresas (
 );
 
 CREATE TABLE farms (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY,
     name VARCHAR(200) NOT NULL,
     city VARCHAR(100) NOT NULL,
     state VARCHAR(2) NOT NULL,
@@ -47,7 +45,7 @@ CREATE TABLE farms (
 CREATE INDEX idx_farms_empresa ON farms(empresa_id);
 
 CREATE TABLE usuarios (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY,
     nome VARCHAR(150) NOT NULL,
     email VARCHAR(150) NOT NULL UNIQUE,
     telefone VARCHAR(20),
@@ -61,23 +59,23 @@ CREATE INDEX idx_usuarios_email ON usuarios(email);
 CREATE INDEX idx_usuarios_empresa ON usuarios(empresa_id);
 
 CREATE TABLE profiles (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY,
     name VARCHAR(100) NOT NULL
 );
 
 CREATE TABLE roles (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE
 );
 
 CREATE TABLE permissions (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY,
     code VARCHAR(100) NOT NULL UNIQUE,
     description VARCHAR(255) NOT NULL
 );
 
 CREATE TABLE role_permissions (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY,
     role_id UUID NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
     permission_id UUID NOT NULL REFERENCES permissions(id) ON DELETE CASCADE,
     CONSTRAINT uk_role_permissions UNIQUE (role_id, permission_id)
@@ -90,7 +88,7 @@ CREATE TABLE profile_permissions (
 );
 
 CREATE TABLE user_farm_profiles (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY,
     usuario_id UUID NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
     farm_id UUID NOT NULL REFERENCES farms(id) ON DELETE CASCADE,
     role VARCHAR(20) NOT NULL,
@@ -102,7 +100,7 @@ CREATE INDEX idx_user_farm_profiles_usuario ON user_farm_profiles(usuario_id);
 CREATE INDEX idx_user_farm_profiles_farm ON user_farm_profiles(farm_id);
 
 CREATE TABLE farm_modules (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY,
     farm_id UUID NOT NULL REFERENCES farms(id) ON DELETE CASCADE,
     module_code VARCHAR(50) NOT NULL,
     active BOOLEAN NOT NULL DEFAULT TRUE,

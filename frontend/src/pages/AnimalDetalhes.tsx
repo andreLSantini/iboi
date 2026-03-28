@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   Calendar,
   CheckCircle2,
+  Download,
   Edit3,
   Filter,
   GitBranch,
@@ -195,6 +196,7 @@ export default function AnimalDetalhes() {
   const [showMovementModal, setShowMovementModal] = useState(false);
   const [savingVaccination, setSavingVaccination] = useState(false);
   const [savingMovement, setSavingMovement] = useState(false);
+  const [exportingPdf, setExportingPdf] = useState(false);
 
   const [vaccinationForm, setVaccinationForm] = useState<RegistrarVacinacaoAnimalRequest>({
     tipo: 'AFTOSA',
@@ -494,6 +496,30 @@ export default function AnimalDetalhes() {
     }
   }
 
+  async function exportarPdfAnimal() {
+    if (!animal) return;
+
+    try {
+      setExportingPdf(true);
+      const response = await api.get(`/api/relatorios/exportar/animal/${animal.id}.pdf`, {
+        responseType: 'blob',
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `relatorio-animal-${animal.brinco}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (requestError: any) {
+      alert(requestError.response?.data?.message || 'Nao foi possivel exportar o PDF do animal.');
+    } finally {
+      setExportingPdf(false);
+    }
+  }
+
   function getStatusColor(status: StatusAnimal) {
     const colors: Record<StatusAnimal, string> = {
       ATIVO: 'bg-emerald-100 text-emerald-800',
@@ -635,9 +661,15 @@ export default function AnimalDetalhes() {
       </div>
 
       <section className="rounded-3xl border border-emerald-100 bg-gradient-to-r from-emerald-50 via-white to-blue-50 p-6">
-        <div className="mb-4 flex items-center gap-2">
-          <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-          <h2 className="text-lg font-bold text-gray-900">Mini relatorio rapido</h2>
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+            <h2 className="text-lg font-bold text-gray-900">Mini relatorio rapido</h2>
+          </div>
+          <button onClick={() => void exportarPdfAnimal()} disabled={exportingPdf} className="btn-primary inline-flex items-center gap-2">
+            <Download className="h-4 w-4" />
+            {exportingPdf ? 'Exportando PDF...' : 'Exportar PDF do animal'}
+          </button>
         </div>
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-4">
           {quickInsights.map((insight) => (

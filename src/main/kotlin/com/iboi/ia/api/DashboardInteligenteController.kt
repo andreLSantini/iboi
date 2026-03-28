@@ -29,7 +29,7 @@ class DashboardInteligenteController(
         planoAcessoService.requireRecurso(
                 SecurityUtils.currentEmpresaId(),
                 PlanoRecurso.IA_DECISAO,
-                "IA de decisao faz parte do plano Premium ou superior."
+                "A camada de IA de decisao sera liberada no futuro do BovCore."
         )
         val dashboard = dashboardInteligenteUseCase.execute(SecurityUtils.currentFarmId())
         return ResponseEntity.ok(dashboard)

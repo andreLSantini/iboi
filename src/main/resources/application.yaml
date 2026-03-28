@@ -28,3 +28,7 @@ asaas:
   api-key: ""
   webhook-token: ""
   user-agent: iboi-billing
+
+app:
+  seed:
+    enabled: ${APP_SEED_ENABLED:false}
