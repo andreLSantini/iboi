@@ -8,6 +8,7 @@ import com.iboi.relatorio.usecase.DashboardUseCase
 import com.iboi.relatorio.usecase.HistoricoAnimalUseCase
 import com.iboi.relatorio.usecase.RelatorioRebanhoUseCase
 import com.iboi.rebanho.repository.AnimalRepository
+import com.lowagie.text.Image
 import com.lowagie.text.Document
 import com.lowagie.text.Font
 import com.lowagie.text.PageSize
@@ -15,6 +16,7 @@ import com.lowagie.text.Paragraph
 import com.lowagie.text.pdf.PdfPCell
 import com.lowagie.text.pdf.PdfPTable
 import com.lowagie.text.pdf.PdfWriter
+import org.springframework.core.io.ClassPathResource
 import org.springframework.stereotype.Service
 import java.io.ByteArrayOutputStream
 import java.time.LocalDateTime
@@ -136,11 +138,43 @@ class RelatorioPdfService(
     }
 
     private fun adicionarCabecalho(document: Document, titulo: String, subtitulo: String) {
-        document.add(Paragraph("BovCore", Font(Font.HELVETICA, 11f, Font.BOLD)))
-        document.add(Paragraph(titulo, titleFont))
-        document.add(Paragraph(subtitulo, bodyFont))
-        document.add(Paragraph("Gerado em ${LocalDateTime.now().format(generatedAtFormatter)}", smallFont))
+        document.add(criarTabelaCabecalho(titulo, subtitulo))
         adicionarEspaco(document)
+    }
+
+    private fun criarTabelaCabecalho(titulo: String, subtitulo: String): PdfPTable {
+        val table = PdfPTable(2)
+        table.widthPercentage = 100f
+        table.setWidths(floatArrayOf(1.1f, 4.9f))
+
+        val logoCell = PdfPCell()
+        logoCell.border = PdfPCell.NO_BORDER
+        logoCell.verticalAlignment = PdfPCell.ALIGN_MIDDLE
+        logoCell.paddingBottom = 8f
+        carregarLogo()?.let { logoCell.addElement(it) } ?: logoCell.addElement(Paragraph("BovCore", Font(Font.HELVETICA, 12f, Font.BOLD)))
+        table.addCell(logoCell)
+
+        val textCell = PdfPCell()
+        textCell.border = PdfPCell.NO_BORDER
+        textCell.paddingLeft = 10f
+        textCell.addElement(Paragraph("BovCore", Font(Font.HELVETICA, 11f, Font.BOLD)))
+        textCell.addElement(Paragraph(titulo, titleFont))
+        textCell.addElement(Paragraph(subtitulo, bodyFont))
+        textCell.addElement(Paragraph("Gerado em ${LocalDateTime.now().format(generatedAtFormatter)}", smallFont))
+        table.addCell(textCell)
+
+        return table
+    }
+
+    private fun carregarLogo(): Image? {
+        return try {
+            val resource = ClassPathResource("pdf/bovcore-logo.png")
+            val image = Image.getInstance(resource.url)
+            image.scaleToFit(64f, 64f)
+            image
+        } catch (_: Exception) {
+            null
+        }
     }
 
     private fun criarTabelaResumoFazenda(rebanho: RelatorioRebanhoResponse, dashboard: DashboardResponse): PdfPTable {
