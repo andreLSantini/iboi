@@ -53,14 +53,20 @@ class SecurityConfig(
         val config = CorsConfiguration()
         config.allowedOriginPatterns = listOf(
                 "http://localhost:*",
+                "https://localhost:*",
                 "http://127.0.0.1:*",
+                "https://127.0.0.1:*",
                 "http://192.168.*:*",
-                "http://10.*:*"
+                "https://192.168.*:*",
+                "http://10.*:*",
+                "https://10.*:*",
+                "https://*.up.railway.app"
         )
         config.allowedMethods = listOf(
                 "GET", "POST", "PUT", "DELETE", "OPTIONS"
         )
         config.allowedHeaders = listOf("*")
+        config.exposedHeaders = listOf("Authorization")
         config.allowCredentials = true
 
         val source = UrlBasedCorsConfigurationSource()
