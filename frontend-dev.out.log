@@ -14,3 +14,6 @@
 [2m21:58:46[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/pages/Landing.tsx[22m
 [2m22:06:51[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/pages/Landing.tsx[22m
 [2m22:08:55[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mindex.html[22m
+[2m22:18:37[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/Login.tsx, /src/components/Onboarding.tsx, /src/components/Layout.tsx, /src/components/DashboardHome.tsx, /src/pages/Animais.tsx, /src/pages/Eventos.tsx, /src/pages/Assinatura.tsx, /src/pages/AnimalDetalhes.tsx, /src/pages/GestaoFazendas.tsx, /src/pages/Lotes.tsx[22m
+[2m22:18:43[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/Login.tsx, /src/index.css[22m
+[2m22:19:54[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/Login.tsx, /src/components/Onboarding.tsx, /src/components/Layout.tsx, /src/components/DashboardHome.tsx, /src/pages/Animais.tsx, /src/pages/Eventos.tsx, /src/pages/Assinatura.tsx, /src/pages/AnimalDetalhes.tsx, /src/pages/GestaoFazendas.tsx, /src/pages/Lotes.tsx[22m

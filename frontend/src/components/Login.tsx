@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, LogIn } from 'lucide-react';
-import axios from 'axios';
 import api from '../services/api';
 import { storeAuthSession } from '../services/session';
 import type { FarmSummary, LoginRequest, LoginResponse } from '../types';
@@ -23,8 +22,8 @@ export default function Login() {
       return;
     }
 
-    const switched = await axios.post<LoginResponse>(
-      'http://localhost:8080/api/farms/select',
+    const switched = await api.post<LoginResponse>(
+      '/api/farms/select',
       { farmId },
       {
         headers: {

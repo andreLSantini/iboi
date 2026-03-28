@@ -21,10 +21,6 @@ spring:
     jwt:
       secret: pQlRYusEJ7XfrRmFbjNVEVqymMZzbMLqzvCBvh7OrMU=
       expiration: 43200000
-    oauth2:
-      resource-server:
-        jwt:
-          issuer-uri: http://localhost:8080/realms/app
 
 asaas:
   enabled: false
