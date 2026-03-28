@@ -25,6 +25,7 @@ class AssinaturaFilter(
                 || path.startsWith("/swagger-ui")
                 || path.startsWith("/h2-console")
                 || path.startsWith("/webhooks/asaas")
+                || path.startsWith("/api/empresa")
                 || path.startsWith("/api/assinatura")
                 || path.startsWith("/api/pagamento")
     }

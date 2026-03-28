@@ -5,7 +5,12 @@ export default function Configuracoes() {
   const navigate = useNavigate();
 
   const sections = [
-    { icon: User, titulo: 'Perfil', descricao: 'Edite suas informacoes pessoais e dados da conta.' },
+    {
+      icon: User,
+      titulo: 'Perfil',
+      descricao: 'Edite dados da empresa e informacoes usadas na cobranca.',
+      action: () => navigate('/app/assinatura'),
+    },
     {
       icon: CreditCard,
       titulo: 'Assinatura',

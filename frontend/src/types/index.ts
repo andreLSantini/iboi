@@ -166,6 +166,15 @@ export interface AssinaturaDto {
   recursos: PlanoRecurso[];
 }
 
+export interface EmpresaDto {
+  id: string;
+  nome: string;
+  tipo: 'MATRIZ' | 'FILIAL';
+  cnpj?: string;
+  asaasCustomerId?: string;
+  ativa: boolean;
+}
+
 export interface HistoricoPagamento {
   id: string;
   valor: number;

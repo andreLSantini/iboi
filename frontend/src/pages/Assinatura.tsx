@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, CheckCircle2, Copy, CreditCard, ExternalLink, Loader2, QrCode, Sparkles } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Copy, CreditCard, ExternalLink, Loader2, QrCode, Sparkles, Building2 } from 'lucide-react';
 import api from '../services/api';
 import { clearSubscriptionReason, getSubscriptionReason } from '../services/session';
 import type {
   AssinaturaDto,
+  EmpresaDto,
   HistoricoPagamento,
   MetodoPagamento,
   PeriodoPagamento,
@@ -62,6 +63,8 @@ export default function Assinatura() {
   const [metodo, setMetodo] = useState<MetodoPagamento>('PIX');
   const [mensagem, setMensagem] = useState<string | null>(null);
   const [cobrancaAtual, setCobrancaAtual] = useState<HistoricoPagamento | null>(null);
+  const [empresa, setEmpresa] = useState<EmpresaDto | null>(null);
+  const [empresaForm, setEmpresaForm] = useState({ nome: '', cnpj: '' });
 
   const bloqueado = getSubscriptionReason() === 'SUBSCRIPTION_INACTIVE' || assinatura?.status === 'VENCIDA';
 
@@ -71,14 +74,20 @@ export default function Assinatura() {
 
   async function carregar() {
     try {
-      const [assinaturaRes, historicoRes] = await Promise.all([
+      const [assinaturaRes, historicoRes, empresaRes] = await Promise.all([
         api.get<AssinaturaDto>('/api/assinatura/minha'),
         api.get<HistoricoPagamento[]>('/api/pagamento/historico'),
+        api.get<EmpresaDto>('/api/empresa/minha'),
       ]);
 
       setAssinatura(assinaturaRes.data);
       setHistorico(historicoRes.data);
       setCobrancaAtual(historicoRes.data.find((item) => item.status === 'PENDENTE') ?? null);
+      setEmpresa(empresaRes.data);
+      setEmpresaForm({
+        nome: empresaRes.data.nome ?? '',
+        cnpj: empresaRes.data.cnpj ?? '',
+      });
 
       if (assinaturaRes.data.status === 'TRIAL' || assinaturaRes.data.status === 'ATIVA') {
         clearSubscriptionReason();
@@ -126,6 +135,28 @@ export default function Assinatura() {
     if (!cobrancaAtual?.pixPayload) return;
     await navigator.clipboard.writeText(cobrancaAtual.pixPayload);
     setMensagem('Codigo PIX copiado.');
+  }
+
+  async function salvarEmpresa() {
+    setSaving(true);
+    setMensagem(null);
+
+    try {
+      const response = await api.put<EmpresaDto>('/api/empresa/minha', {
+        nome: empresaForm.nome,
+        cnpj: empresaForm.cnpj || null,
+      });
+      setEmpresa(response.data);
+      setEmpresaForm({
+        nome: response.data.nome ?? '',
+        cnpj: response.data.cnpj ?? '',
+      });
+      setMensagem('Dados da empresa atualizados. Tente gerar a cobranca novamente.');
+    } catch (error: any) {
+      setMensagem(error.response?.data?.message || 'Nao foi possivel atualizar os dados da empresa.');
+    } finally {
+      setSaving(false);
+    }
   }
 
   const recursosAtivos = useMemo(() => assinatura?.recursos ?? [], [assinatura]);
@@ -231,6 +262,46 @@ export default function Assinatura() {
         </div>
 
         <div className="space-y-6">
+          <div className="card">
+            <div className="flex items-center gap-3">
+              <Building2 className="h-6 w-6 text-primary-600" />
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">Dados da empresa para cobranca</h2>
+                <p className="text-sm text-slate-600">Se o Asaas recusar o CPF/CNPJ, corrija aqui e tente novamente.</p>
+              </div>
+            </div>
+
+            <div className="mt-5 grid gap-4">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">Nome da empresa</label>
+                <input
+                  className="input-field"
+                  value={empresaForm.nome}
+                  onChange={(e) => setEmpresaForm((prev) => ({ ...prev, nome: e.target.value }))}
+                  placeholder="Nome da empresa"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">CPF ou CNPJ</label>
+                <input
+                  className="input-field"
+                  value={empresaForm.cnpj}
+                  onChange={(e) => setEmpresaForm((prev) => ({ ...prev, cnpj: e.target.value }))}
+                  placeholder="Somente numeros ou formatado"
+                />
+              </div>
+
+              <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
+                <p>Cliente Asaas atual: <strong>{empresa?.asaasCustomerId ?? 'ainda nao criado'}</strong></p>
+              </div>
+
+              <button onClick={() => void salvarEmpresa()} disabled={saving} className="btn-secondary">
+                {saving ? 'Salvando...' : 'Salvar dados da empresa'}
+              </button>
+            </div>
+          </div>
+
           <div className="card">
             <div className="flex items-center gap-3">
               <CreditCard className="h-6 w-6 text-primary-600" />

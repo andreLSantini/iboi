@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
+import org.springframework.web.client.RestClientResponseException
 import org.springframework.web.client.RestClient
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -35,6 +36,10 @@ class AsaasBillingGateway(
             dueDate: LocalDate,
             description: String
     ): BillingChargeResult {
+        if (apiKey.isBlank()) {
+            throw IllegalStateException("ASAAS_API_KEY nao configurada no ambiente")
+        }
+
         val customerId = ensureCustomer(empresa)
         val billingType = when (metodoPagamento) {
             MetodoPagamento.PIX -> "PIX"
@@ -43,55 +48,78 @@ class AsaasBillingGateway(
             MetodoPagamento.TRANSFERENCIA -> throw IllegalArgumentException("Transferencia nao e suportada para cobrancas Asaas")
         }
 
-        val payment = restClient.post()
-                .uri("/v3/payments")
-                .body(
-                        mapOf(
-                                "customer" to customerId,
-                                "billingType" to billingType,
-                                "value" to valor,
-                                "dueDate" to dueDate.toString(),
-                                "description" to description
-                        )
-                )
-                .retrieve()
-                .body(AsaasPaymentResponse::class.java)
-                ?: throw IllegalStateException("Asaas nao retornou a cobranca criada")
-
-        val pixInfo = if (billingType == "PIX") {
-            restClient.get()
-                    .uri("/v3/payments/${payment.id}/pixQrCode")
+        try {
+            val payment = restClient.post()
+                    .uri("/v3/payments")
+                    .body(
+                            mapOf(
+                                    "customer" to customerId,
+                                    "billingType" to billingType,
+                                    "value" to valor,
+                                    "dueDate" to dueDate.toString(),
+                                    "description" to description
+                            )
+                    )
                     .retrieve()
-                    .body(AsaasPixQrCodeResponse::class.java)
-        } else {
-            null
-        }
+                    .body(AsaasPaymentResponse::class.java)
+                    ?: throw IllegalStateException("Asaas nao retornou a cobranca criada")
 
-        return BillingChargeResult(
-                success = true,
-                transactionId = payment.id,
-                provider = "asaas",
-                invoiceUrl = payment.invoiceUrl,
-                bankSlipUrl = payment.bankSlipUrl,
-                pixPayload = pixInfo?.payload,
-                pixEncodedImage = pixInfo?.encodedImage
-        )
+            val pixInfo = if (billingType == "PIX") {
+                restClient.get()
+                        .uri("/v3/payments/${payment.id}/pixQrCode")
+                        .retrieve()
+                        .body(AsaasPixQrCodeResponse::class.java)
+            } else {
+                null
+            }
+
+            return BillingChargeResult(
+                    success = true,
+                    transactionId = payment.id,
+                    provider = "asaas",
+                    invoiceUrl = payment.invoiceUrl,
+                    bankSlipUrl = payment.bankSlipUrl,
+                    pixPayload = pixInfo?.payload,
+                    pixEncodedImage = pixInfo?.encodedImage
+            )
+        } catch (ex: RestClientResponseException) {
+            val body = ex.responseBodyAsString
+                    ?.takeIf { it.isNotBlank() }
+                    ?.replace('\n', ' ')
+                    ?.take(400)
+            val suffix = body?.let { ": $it" } ?: ""
+            throw IllegalStateException("Falha ao criar cobranca no Asaas (HTTP ${ex.statusCode.value()})$suffix")
+        } catch (ex: Exception) {
+            if (ex is IllegalArgumentException || ex is IllegalStateException) {
+                throw ex
+            }
+            throw IllegalStateException("Falha ao criar cobranca no Asaas: ${ex.message}", ex)
+        }
     }
 
     private fun ensureCustomer(empresa: Empresa): String {
         empresa.asaasCustomerId?.let { return it }
 
-        val customer = restClient.post()
-                .uri("/v3/customers")
-                .body(
-                        mapOf(
-                                "name" to empresa.nome,
-                                "cpfCnpj" to empresa.cnpj
-                        ).filterValues { it != null }
-                )
-                .retrieve()
-                .body(AsaasCustomerResponse::class.java)
-                ?: throw IllegalStateException("Asaas nao retornou o cliente criado")
+        val customer = try {
+            restClient.post()
+                    .uri("/v3/customers")
+                    .body(
+                            mapOf(
+                                    "name" to empresa.nome,
+                                    "cpfCnpj" to empresa.cnpj
+                            ).filterValues { it != null }
+                    )
+                    .retrieve()
+                    .body(AsaasCustomerResponse::class.java)
+                    ?: throw IllegalStateException("Asaas nao retornou o cliente criado")
+        } catch (ex: RestClientResponseException) {
+            val body = ex.responseBodyAsString
+                    ?.takeIf { it.isNotBlank() }
+                    ?.replace('\n', ' ')
+                    ?.take(400)
+            val suffix = body?.let { ": $it" } ?: ""
+            throw IllegalStateException("Falha ao criar cliente no Asaas (HTTP ${ex.statusCode.value()})$suffix")
+        }
 
         empresa.asaasCustomerId = customer.id
         empresaRepository.save(empresa)

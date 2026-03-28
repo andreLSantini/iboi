@@ -3,6 +3,7 @@ package com.iboi.rebanho.api.exception
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.FieldError
+import org.springframework.web.client.RestClientResponseException
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
@@ -67,6 +68,35 @@ class RebanhoExceptionHandler {
             .status(HttpStatus.BAD_REQUEST)
             .body(ErrorResponse(
                 message = ex.message ?: "Requisicao invalida",
+                timestamp = LocalDateTime.now()
+            ))
+    }
+
+    @ExceptionHandler(IllegalStateException::class)
+    fun handleIllegalState(ex: IllegalStateException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(ErrorResponse(
+                message = ex.message ?: "Estado invalido para concluir a operacao",
+                timestamp = LocalDateTime.now()
+            ))
+    }
+
+    @ExceptionHandler(RestClientResponseException::class)
+    fun handleRestClientResponse(ex: RestClientResponseException): ResponseEntity<ErrorResponse> {
+        val details = ex.responseBodyAsString?.takeIf { it.isNotBlank() }?.take(300)
+        val message = buildString {
+            append("Falha ao comunicar com servico externo")
+            if (!details.isNullOrBlank()) {
+                append(": ")
+                append(details)
+            }
+        }
+
+        return ResponseEntity
+            .status(HttpStatus.BAD_GATEWAY)
+            .body(ErrorResponse(
+                message = message,
                 timestamp = LocalDateTime.now()
             ))
     }
