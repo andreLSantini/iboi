@@ -1,11 +1,13 @@
-import { Building, Edit3, MapPinned, PlusCircle, Sprout, Tractor, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Building, Edit3, Eye, MapPinned, PlusCircle, Sprout, Tractor, X } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import AnimalQuickViewModal from '../components/AnimalQuickViewModal';
 import api from '../services/api';
 import { getCurrentFarm, getFarms, storeAuthSession, storeCurrentFarm, storeFarms } from '../services/session';
 import type {
+  AnimalDto,
   AtualizarFazendaRequest,
   CadastrarFazendaRequest,
   CadastrarPastoRequest,
@@ -127,6 +129,7 @@ function MiniMap({
 export default function GestaoFazendas() {
   const [farms, setFarms] = useState<FarmSummary[]>(() => getFarms());
   const [pastures, setPastures] = useState<Pasture[]>([]);
+  const [farmAnimals, setFarmAnimals] = useState<AnimalDto[]>([]);
   const [saving, setSaving] = useState(false);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [message, setMessage] = useState('');
@@ -144,6 +147,7 @@ export default function GestaoFazendas() {
   const [createFarmOpen, setCreateFarmOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [pastureModalOpen, setPastureModalOpen] = useState(false);
+  const [quickViewAnimalId, setQuickViewAnimalId] = useState<string | null>(null);
   const currentFarm = getCurrentFarm();
 
   useEffect(() => {
@@ -160,8 +164,23 @@ export default function GestaoFazendas() {
     if (selectedFarmId) {
       void carregarDetalhes(selectedFarmId);
       void carregarPastos(selectedFarmId);
+      void carregarAnimaisDaFazendaSelecionada(selectedFarmId);
     }
   }, [selectedFarmId]);
+
+  const animaisPorPasto = useMemo(() => {
+    return farmAnimals.reduce<Record<string, AnimalDto[]>>((acc, animal) => {
+      const pastureId = animal.pasture?.id;
+      if (!pastureId) {
+        return acc;
+      }
+      if (!acc[pastureId]) {
+        acc[pastureId] = [];
+      }
+      acc[pastureId].push(animal);
+      return acc;
+    }, {});
+  }, [farmAnimals]);
 
   async function carregarFazendas() {
     try {
@@ -221,6 +240,24 @@ export default function GestaoFazendas() {
       setPastures(response.data);
     } catch (error) {
       console.error('Erro ao carregar pastos', error);
+    }
+  }
+
+  async function carregarAnimaisDaFazendaSelecionada(farmId: string) {
+    if (currentFarm?.id !== farmId) {
+      setFarmAnimals([]);
+      return;
+    }
+
+    try {
+      const response = await api.get('/api/animais', {
+        params: { size: 500 },
+      });
+      const data = Array.isArray(response.data) ? response.data : response.data.content || [];
+      setFarmAnimals(data);
+    } catch (error) {
+      console.error('Erro ao carregar animais da fazenda selecionada', error);
+      setFarmAnimals([]);
     }
   }
 
@@ -493,7 +530,12 @@ export default function GestaoFazendas() {
               </div>
             </div>
 
-            <div className="mt-4 space-y-3">
+              <div className="mt-4 space-y-3">
+              {selectedFarmId !== currentFarm?.id && pastures.length > 0 && (
+                <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                  Entre na fazenda para ver dinamicamente quantos bois existem em cada pasto e abrir a ficha rapida de cada um.
+                </div>
+              )}
               {pastures.length === 0 ? (
                 <p className="text-sm text-slate-600">Nenhum pasto cadastrado ainda.</p>
               ) : (
@@ -503,10 +545,30 @@ export default function GestaoFazendas() {
                     <p className="mt-1 text-sm text-slate-600">
                       {pasture.areaHa ? `${pasture.areaHa} ha` : 'Area nao informada'} | lat {pasture.latitude ?? '-'} | long {pasture.longitude ?? '-'}
                     </p>
+                    <p className="mt-1 text-sm font-medium text-primary-700">
+                      {selectedFarmId === currentFarm?.id
+                        ? `${animaisPorPasto[pasture.id]?.length ?? 0} boi(s) vinculados a este pasto`
+                        : 'Troque para esta fazenda para ver os bois deste pasto'}
+                    </p>
                     {pasture.notes && <p className="mt-1 text-xs text-slate-500">{pasture.notes}</p>}
                     <div className="mt-3">
                       <MiniMap latitude={pasture.latitude} longitude={pasture.longitude} label={pasture.name} className="h-36 w-full" />
                     </div>
+                    {selectedFarmId === currentFarm?.id && (animaisPorPasto[pasture.id]?.length ?? 0) > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {animaisPorPasto[pasture.id].slice(0, 6).map((animal) => (
+                          <button
+                            key={animal.id}
+                            onClick={() => setQuickViewAnimalId(animal.id)}
+                            className="inline-flex items-center gap-2 rounded-full border border-primary-200 bg-white px-3 py-1.5 text-xs font-medium text-primary-700 hover:bg-primary-50"
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                            {animal.brinco}
+                            {animal.nome ? ` - ${animal.nome}` : ''}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))
               )}
@@ -641,10 +703,31 @@ export default function GestaoFazendas() {
                     <p className="mt-1 text-sm text-slate-600">
                       {pasture.areaHa ? `${pasture.areaHa} ha` : 'Area nao informada'} | lat {pasture.latitude ?? '-'} | long {pasture.longitude ?? '-'}
                     </p>
+                    <p className="mt-1 text-sm font-medium text-primary-700">
+                      {selectedFarmId === currentFarm?.id
+                        ? `${animaisPorPasto[pasture.id]?.length ?? 0} boi(s) neste pasto`
+                        : 'Entre na fazenda para listar os bois deste pasto'}
+                    </p>
                     {pasture.notes && <p className="mt-1 text-xs text-slate-500">{pasture.notes}</p>}
                     <div className="mt-3">
                       <MiniMap latitude={pasture.latitude} longitude={pasture.longitude} label={pasture.name} className="h-36 w-full" />
                     </div>
+                    {selectedFarmId === currentFarm?.id && (animaisPorPasto[pasture.id]?.length ?? 0) > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {animaisPorPasto[pasture.id].map((animal) => (
+                          <button
+                            key={animal.id}
+                            type="button"
+                            onClick={() => setQuickViewAnimalId(animal.id)}
+                            className="inline-flex items-center gap-2 rounded-full border border-primary-200 bg-white px-3 py-1.5 text-xs font-medium text-primary-700 hover:bg-primary-50"
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                            {animal.brinco}
+                            {animal.nome ? ` - ${animal.nome}` : ''}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))
               )}
@@ -676,6 +759,12 @@ export default function GestaoFazendas() {
           </div>
         </div>
       </Modal>
+
+      <AnimalQuickViewModal
+        animalId={quickViewAnimalId}
+        open={Boolean(quickViewAnimalId)}
+        onClose={() => setQuickViewAnimalId(null)}
+      />
     </div>
   );
 }

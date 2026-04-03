@@ -9,10 +9,12 @@ import {
   X,
   AlertCircle,
   Eye,
+  ExternalLink,
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import AnimalQuickViewModal from '../components/AnimalQuickViewModal';
 import api from '../services/api';
 import type {
   AnimalDto,
@@ -34,6 +36,7 @@ export default function Animais() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [quickViewAnimalId, setQuickViewAnimalId] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [editingAnimal, setEditingAnimal] = useState<AnimalDto | null>(null);
   const [error, setError] = useState('');
@@ -468,11 +471,18 @@ export default function Animais() {
                   <td className="py-3 px-4">
                     <div className="flex items-center justify-end gap-2">
                       <button
-                        onClick={() => navigate(`/app/animais/${animal.id}`)}
+                        onClick={() => setQuickViewAnimalId(animal.id)}
                         className="p-2 hover:bg-blue-100 rounded-lg text-blue-600"
-                        title="Ver detalhes"
+                        title="Visao rapida"
                       >
                         <Eye className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => navigate(`/app/animais/${animal.id}`)}
+                        className="p-2 hover:bg-emerald-100 rounded-lg text-emerald-600"
+                        title="Abrir ficha completa"
+                      >
+                        <ExternalLink className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => openModal(animal)}
@@ -778,6 +788,12 @@ export default function Animais() {
           </div>
         </div>
       )}
+
+      <AnimalQuickViewModal
+        animalId={quickViewAnimalId}
+        open={Boolean(quickViewAnimalId)}
+        onClose={() => setQuickViewAnimalId(null)}
+      />
     </div>
   );
 }
