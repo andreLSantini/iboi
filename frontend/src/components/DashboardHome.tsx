@@ -3,7 +3,7 @@ import { Activity, AlertTriangle, Beef, CheckCircle2, CircleDashed, FileSpreadsh
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { getCurrentFarm, getUser } from '../services/session';
-import type { AnimalDto, CategoriaAnimal, EventoDto, FarmDetail, ImportarAnimaisResponse, LoteDto, Pasture } from '../types';
+import type { AnimalDto, CategoriaAnimal, DashboardInteligenteResponse, EventoDto, FarmDetail, ImportarAnimaisResponse, LoteDto, Pasture } from '../types';
 
 interface DashboardStats {
   totalAnimais: number;
@@ -58,6 +58,7 @@ export default function DashboardHome() {
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<ImportarAnimaisResponse | null>(null);
   const [assistantError, setAssistantError] = useState('');
+  const [iaDashboard, setIaDashboard] = useState<DashboardInteligenteResponse | null>(null);
 
   useEffect(() => {
     void loadDashboardData();
@@ -67,18 +68,21 @@ export default function DashboardHome() {
     try {
       setLoading(true);
 
-      const requests: Promise<unknown>[] = [
-        api.get('/api/animais'),
-        api.get('/api/eventos'),
-        api.get('/api/lotes', { params: { apenasAtivos: true } }),
-      ];
+      const animaisPromise = api.get('/api/animais');
+      const eventosPromise = api.get('/api/eventos');
+      const lotesPromise = api.get('/api/lotes', { params: { apenasAtivos: true } });
+      const farmPromise = currentFarm?.id ? api.get(`/api/farms/${currentFarm.id}`) : Promise.resolve(null);
+      const pasturesPromise = currentFarm?.id ? api.get(`/api/farms/${currentFarm.id}/pastures`) : Promise.resolve(null);
+      const iaDashboardPromise = api.get<DashboardInteligenteResponse>('/api/ia/dashboard');
 
-      if (currentFarm?.id) {
-        requests.push(api.get(`/api/farms/${currentFarm.id}`));
-        requests.push(api.get(`/api/farms/${currentFarm.id}/pastures`));
-      }
-
-      const [animaisRes, eventosRes, lotesRes, farmRes, pasturesRes] = (await Promise.all(requests)) as any[];
+      const [animaisRes, eventosRes, lotesRes, farmRes, pasturesRes, iaDashboardRes] = await Promise.all([
+        animaisPromise,
+        eventosPromise,
+        lotesPromise,
+        farmPromise,
+        pasturesPromise,
+        iaDashboardPromise,
+      ]);
 
       const animaisData = Array.isArray(animaisRes.data) ? animaisRes.data : animaisRes.data.content || [];
       const eventosData = Array.isArray(eventosRes.data) ? eventosRes.data : eventosRes.data.content || [];
@@ -128,6 +132,7 @@ export default function DashboardHome() {
       setLotes(lotesData);
       setFarmDetail(farmRes?.data ?? null);
       setPastures(pasturesRes?.data ?? []);
+      setIaDashboard(iaDashboardRes?.data ?? null);
     } catch (error) {
       console.error('Erro ao carregar dashboard', error);
     } finally {
@@ -297,49 +302,64 @@ export default function DashboardHome() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.6fr_1fr]">
-        <div className="card">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary-500">Primeiros passos</p>
-              <h3 className="mt-2 text-xl font-bold text-gray-900">Assistente de ativacao da fazenda</h3>
-              <p className="mt-1 text-sm text-gray-600">
-                Deixe a operacao pronta para usar no campo com importacao rapida, lotes, pastos e dados basicos completos.
-              </p>
-            </div>
-            <div className="rounded-2xl bg-primary-50 px-4 py-3 text-right">
-              <p className="text-xs uppercase tracking-[0.18em] text-primary-600">Ativacao</p>
-              <p className="text-2xl font-bold text-primary-700">{progress}%</p>
-              <p className="text-xs text-primary-600">{completedCount} de {checklist.length} etapas concluidas</p>
-            </div>
-          </div>
-
-          <div className="mt-5 h-3 overflow-hidden rounded-full bg-gray-100">
-            <div className="h-full rounded-full bg-primary-600 transition-all" style={{ width: `${progress}%` }} />
-          </div>
-
-          <div className="mt-6 space-y-3">
-            {checklist.map((item) => (
-              <div key={item.id} className="flex flex-col gap-3 rounded-2xl border border-gray-100 bg-gray-50 p-4 lg:flex-row lg:items-center lg:justify-between">
-                <div className="flex items-start gap-3">
-                  {item.done ? (
-                    <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-600" />
-                  ) : (
-                    <CircleDashed className="mt-0.5 h-5 w-5 text-amber-500" />
-                  )}
-                  <div>
-                    <p className="font-medium text-gray-900">{item.title}</p>
-                    <p className="text-sm text-gray-600">{item.description}</p>
-                  </div>
-                </div>
-                {!item.done && item.action && item.actionLabel && (
-                  <button onClick={item.action} className="btn-secondary whitespace-nowrap">
-                    {item.actionLabel}
-                  </button>
-                )}
+        {progress < 100 ? (
+          <div className="card">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary-500">Primeiros passos</p>
+                <h3 className="mt-2 text-xl font-bold text-gray-900">Assistente de ativacao da fazenda</h3>
+                <p className="mt-1 text-sm text-gray-600">
+                  Deixe a operacao pronta para usar no campo com importacao rapida, lotes, pastos e dados basicos completos.
+                </p>
               </div>
-            ))}
+              <div className="rounded-2xl bg-primary-50 px-4 py-3 text-right">
+                <p className="text-xs uppercase tracking-[0.18em] text-primary-600">Ativacao</p>
+                <p className="text-2xl font-bold text-primary-700">{progress}%</p>
+                <p className="text-xs text-primary-600">{completedCount} de {checklist.length} etapas concluidas</p>
+              </div>
+            </div>
+
+            <div className="mt-5 h-3 overflow-hidden rounded-full bg-gray-100">
+              <div className="h-full rounded-full bg-primary-600 transition-all" style={{ width: `${progress}%` }} />
+            </div>
+
+            <div className="mt-6 space-y-3">
+              {checklist.map((item) => (
+                <div key={item.id} className="flex flex-col gap-3 rounded-2xl border border-gray-100 bg-gray-50 p-4 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="flex items-start gap-3">
+                    {item.done ? (
+                      <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-600" />
+                    ) : (
+                      <CircleDashed className="mt-0.5 h-5 w-5 text-amber-500" />
+                    )}
+                    <div>
+                      <p className="font-medium text-gray-900">{item.title}</p>
+                      <p className="text-sm text-gray-600">{item.description}</p>
+                    </div>
+                  </div>
+                  {!item.done && item.action && item.actionLabel && (
+                    <button onClick={item.action} className="btn-secondary whitespace-nowrap">
+                      {item.actionLabel}
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="card">
+            <div className="flex items-start gap-3">
+              <CheckCircle2 className="mt-1 h-6 w-6 text-emerald-600" />
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-600">Operacao pronta</p>
+                <h3 className="mt-2 text-xl font-bold text-gray-900">Fazenda ativada com sucesso</h3>
+                <p className="mt-1 text-sm text-gray-600">
+                  O BovCore ja tem base suficiente para operar o rebanho, gerar relatorios simples e usar a primeira camada de IA assistida.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="space-y-6">
           <div className="card">
@@ -437,6 +457,81 @@ export default function DashboardHome() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="card">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-bold text-gray-900">Insights operacionais com IA</h3>
+              <p className="text-sm text-gray-600">Leitura heuristica do rebanho para ajudar a priorizar a rotina.</p>
+            </div>
+            <button onClick={() => navigate('/app/alertas')} className="text-sm font-medium text-primary-600">
+              Abrir alertas
+            </button>
+          </div>
+
+          {iaDashboard ? (
+            <div className="mt-4 space-y-4">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                <div className="rounded-2xl bg-slate-50 p-4">
+                  <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Score medio</p>
+                  <p className="mt-2 text-3xl font-bold text-slate-900">{iaDashboard.scoreRiscoMedio}</p>
+                </div>
+                <div className="rounded-2xl bg-red-50 p-4">
+                  <p className="text-xs uppercase tracking-[0.18em] text-red-500">Alertas criticos</p>
+                  <p className="mt-2 text-3xl font-bold text-red-700">{iaDashboard.alertasCriticos}</p>
+                </div>
+                <div className="rounded-2xl bg-amber-50 p-4">
+                  <p className="text-xs uppercase tracking-[0.18em] text-amber-600">Animais em risco alto</p>
+                  <p className="mt-2 text-3xl font-bold text-amber-700">{iaDashboard.animaisRiscoAlto.length}</p>
+                </div>
+              </div>
+
+              <div className="grid gap-3 lg:grid-cols-2">
+                <div className="rounded-2xl border border-gray-100 p-4">
+                  <p className="text-sm font-semibold text-gray-900">Animais que pedem atencao</p>
+                  <div className="mt-3 space-y-3">
+                    {iaDashboard.animaisRiscoAlto.slice(0, 3).map((item) => (
+                      <div key={item.animalId} className="rounded-xl bg-gray-50 p-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="font-medium text-gray-900">
+                            {item.brinco}
+                            {item.nome ? ` - ${item.nome}` : ''}
+                          </p>
+                          <span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-700">
+                            Score {item.scoreRisco}
+                          </span>
+                        </div>
+                        <p className="mt-1 text-sm text-gray-600">{item.fatoresRisco}</p>
+                      </div>
+                    ))}
+                    {iaDashboard.animaisRiscoAlto.length === 0 && (
+                      <p className="text-sm text-gray-600">Nenhum animal em risco alto no momento.</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-gray-100 p-4">
+                  <p className="text-sm font-semibold text-gray-900">Recomendacoes sugeridas</p>
+                  <div className="mt-3 space-y-3">
+                    {iaDashboard.recomendacoesIA.slice(0, 4).map((item, index) => (
+                      <div key={`${item.contexto}-${index}`} className="rounded-xl bg-primary-50 p-3">
+                        <p className="text-xs uppercase tracking-[0.18em] text-primary-600">{item.contexto}</p>
+                        <p className="mt-1 text-sm text-primary-900">{item.recomendacao}</p>
+                      </div>
+                    ))}
+                    {iaDashboard.recomendacoesIA.length === 0 && (
+                      <p className="text-sm text-gray-600">Ainda nao ha recomendacoes geradas para esta fazenda.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-4 rounded-2xl bg-gray-50 p-4 text-sm text-gray-600">
+              Nao foi possivel carregar os insights agora.
+            </div>
+          )}
+        </div>
+
         <div className="card">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-bold text-gray-900">Ultimos eventos</h3>

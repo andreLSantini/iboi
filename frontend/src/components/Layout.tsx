@@ -40,7 +40,7 @@ export default function Layout() {
     { icon: Calendar, label: 'Calendario', path: '/app/calendario' },
     { icon: DollarSign, label: 'Despesas', path: '/app/despesas' },
     { icon: BarChart3, label: 'Relatorios', path: '/app/relatorios' },
-    { icon: AlertCircle, label: 'Alertas estrategicos', path: '/app/alertas' },
+    { icon: AlertCircle, label: 'Alertas e IA', path: '/app/alertas' },
     { icon: Users, label: 'Veterinarios', path: '/app/veterinarios' },
     { icon: CreditCard, label: 'Assinatura', path: '/app/assinatura' },
     { icon: Settings, label: 'Configuracoes', path: '/app/configuracoes' },

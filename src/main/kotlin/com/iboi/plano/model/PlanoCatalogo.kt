@@ -14,7 +14,7 @@ object PlanoCatalogo {
             TipoAssinatura.TRIAL to PlanoDefinicao(
                     tipo = TipoAssinatura.TRIAL,
                     titulo = "Trial",
-                    descricao = "Acesso temporario ao nucleo operacional do produto para conhecer a plataforma antes da cobranca.",
+                    descricao = "Acesso temporario ao nucleo operacional do produto com relatorios simples e IA assistida inicial.",
                     limiteAnimais = 50,
                     recursos = setOf(
                             PlanoRecurso.CADASTRO_BASICO,
@@ -22,7 +22,8 @@ object PlanoCatalogo {
                             PlanoRecurso.PESAGEM,
                             PlanoRecurso.VACINACAO,
                             PlanoRecurso.MOVIMENTACAO,
-                            PlanoRecurso.RELATORIOS
+                            PlanoRecurso.RELATORIOS,
+                            PlanoRecurso.IA_DECISAO
                     )
             ),
             TipoAssinatura.FREE to PlanoDefinicao(
@@ -36,13 +37,14 @@ object PlanoCatalogo {
                             PlanoRecurso.PESAGEM,
                             PlanoRecurso.VACINACAO,
                             PlanoRecurso.MOVIMENTACAO,
-                            PlanoRecurso.RELATORIOS
+                            PlanoRecurso.RELATORIOS,
+                            PlanoRecurso.IA_DECISAO
                     )
             ),
             TipoAssinatura.BASIC to PlanoDefinicao(
                     tipo = TipoAssinatura.BASIC,
                     titulo = "Basic",
-                    descricao = "Operacao completa com manejo, sanidade e relatorios simples para a rotina da fazenda.",
+                    descricao = "Operacao completa com manejo, sanidade, relatorios simples e IA assistida para a rotina da fazenda.",
                     limiteAnimais = null,
                     recursos = setOf(
                             PlanoRecurso.CADASTRO_BASICO,
@@ -50,13 +52,14 @@ object PlanoCatalogo {
                             PlanoRecurso.PESAGEM,
                             PlanoRecurso.VACINACAO,
                             PlanoRecurso.MOVIMENTACAO,
-                            PlanoRecurso.RELATORIOS
+                            PlanoRecurso.RELATORIOS,
+                            PlanoRecurso.IA_DECISAO
                     )
             ),
             TipoAssinatura.PRO to PlanoDefinicao(
                     tipo = TipoAssinatura.PRO,
                     titulo = "Pro",
-                    descricao = "Camada futura para leitura economica da fazenda.",
+                    descricao = "Camada futura para leitura economica mais profunda da fazenda.",
                     limiteAnimais = null,
                     recursos = setOf(
                             PlanoRecurso.CADASTRO_BASICO,
@@ -72,7 +75,7 @@ object PlanoCatalogo {
             TipoAssinatura.PREMIUM to PlanoDefinicao(
                     tipo = TipoAssinatura.PREMIUM,
                     titulo = "Premium",
-                    descricao = "Camada futura com inteligencia preditiva e recomendacoes.",
+                    descricao = "Camada futura com inteligencia preditiva avancada, score e recomendacoes economicas.",
                     limiteAnimais = null,
                     recursos = setOf(
                             PlanoRecurso.CADASTRO_BASICO,

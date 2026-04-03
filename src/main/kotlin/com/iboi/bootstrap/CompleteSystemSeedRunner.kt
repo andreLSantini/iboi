@@ -89,6 +89,7 @@ class CompleteSystemSeedRunner(
     override fun run(args: ApplicationArguments) {
         val adminEmail = "demo@bovcore.com.br"
         if (usuarioRepository.existsByEmail(adminEmail)) {
+            reconcileDemoBilling(adminEmail)
             logger.info("Seed completo ignorado: usuario {} ja existe.", adminEmail)
             return
         }
@@ -603,12 +604,12 @@ class CompleteSystemSeedRunner(
                         Pagamento(
                                 assinatura = assinatura,
                                 valor = BigDecimal("79.00"),
-                                dataVencimento = agora.minusDays(12),
-                                dataPagamento = agora.minusDays(10),
+                                dataVencimento = agora.minusDays(42),
+                                dataPagamento = agora.minusDays(40),
                                 status = StatusPagamento.PAGO,
                                 metodoPagamento = MetodoPagamento.PIX,
-                                transacaoId = "pay_demo_001",
-                                gatewayProvider = "manual",
+                                transacaoId = "pay_demo_001_pago",
+                                gatewayProvider = "asaas-demo",
                                 asaasSubscriptionId = "sub_demo_basic_001",
                                 invoiceUrl = "https://demo.bovcore.local/faturas/001",
                                 pixPayload = "00020126580014BR.GOV.BCB.PIX0114bovcore-demo520400005303986540679.005802BR5925BOVCORE DEMO AGRO6009SAO PAULO62070503***6304ABCD"
@@ -616,11 +617,12 @@ class CompleteSystemSeedRunner(
                         Pagamento(
                                 assinatura = assinatura,
                                 valor = BigDecimal("79.00"),
-                                dataVencimento = agora.plusDays(18),
-                                status = StatusPagamento.PENDENTE,
+                                dataVencimento = agora.minusDays(12),
+                                dataPagamento = agora.minusDays(10),
+                                status = StatusPagamento.PAGO,
                                 metodoPagamento = MetodoPagamento.PIX,
-                                transacaoId = "pay_demo_002",
-                                gatewayProvider = "manual",
+                                transacaoId = "pay_demo_002_pago",
+                                gatewayProvider = "asaas-demo",
                                 asaasSubscriptionId = "sub_demo_basic_001",
                                 invoiceUrl = "https://demo.bovcore.local/faturas/002",
                                 pixPayload = "00020126580014BR.GOV.BCB.PIX0114bovcore-demo520400005303986540679.005802BR5925BOVCORE DEMO AGRO6009SAO PAULO62070503***6304EFGH"
@@ -648,5 +650,70 @@ class CompleteSystemSeedRunner(
                 }
             }
         }
+    }
+
+    private fun reconcileDemoBilling(adminEmail: String) {
+        val usuario = usuarioRepository.findByEmail(adminEmail) ?: return
+        val empresa = usuario.empresa
+        val agora = LocalDateTime.now()
+
+        val assinatura = assinaturaRepository.findByEmpresaId(empresa.id!!)
+                ?: assinaturaRepository.save(
+                        Assinatura(
+                                empresa = empresa,
+                                tipo = TipoAssinatura.BASIC,
+                                status = StatusAssinatura.ATIVA,
+                                periodoPagamento = PeriodoPagamento.MENSAL,
+                                dataInicio = agora.minusMonths(2),
+                                dataVencimento = agora.plusDays(18),
+                                proximaCobranca = agora.plusDays(18),
+                                valor = BigDecimal("79.00"),
+                                asaasSubscriptionId = "sub_demo_basic_001"
+                        )
+                )
+
+        assinatura.tipo = TipoAssinatura.BASIC
+        assinatura.status = StatusAssinatura.ATIVA
+        assinatura.periodoPagamento = PeriodoPagamento.MENSAL
+        assinatura.dataVencimento = agora.plusDays(18)
+        assinatura.proximaCobranca = agora.plusDays(18)
+        assinatura.valor = BigDecimal("79.00")
+        assinatura.asaasSubscriptionId = assinatura.asaasSubscriptionId ?: "sub_demo_basic_001"
+        assinaturaRepository.save(assinatura)
+
+        val pagamentosExistentes = pagamentoRepository.findByAssinaturaEmpresaIdOrderByDataVencimentoDesc(empresa.id!!)
+        if (pagamentosExistentes.isNotEmpty()) {
+            pagamentoRepository.deleteAll(pagamentosExistentes)
+        }
+
+        pagamentoRepository.saveAll(
+                listOf(
+                        Pagamento(
+                                assinatura = assinatura,
+                                valor = BigDecimal("79.00"),
+                                dataVencimento = agora.minusDays(42),
+                                dataPagamento = agora.minusDays(40),
+                                status = StatusPagamento.PAGO,
+                                metodoPagamento = MetodoPagamento.PIX,
+                                transacaoId = "pay_demo_001_pago",
+                                gatewayProvider = "asaas-demo",
+                                asaasSubscriptionId = assinatura.asaasSubscriptionId,
+                                invoiceUrl = "https://demo.bovcore.local/faturas/001"
+                        ),
+                        Pagamento(
+                                assinatura = assinatura,
+                                valor = BigDecimal("79.00"),
+                                dataVencimento = agora.minusDays(12),
+                                dataPagamento = agora.minusDays(10),
+                                status = StatusPagamento.PAGO,
+                                metodoPagamento = MetodoPagamento.PIX,
+                                transacaoId = "pay_demo_002_pago",
+                                gatewayProvider = "asaas-demo",
+                                asaasSubscriptionId = assinatura.asaasSubscriptionId,
+                                invoiceUrl = "https://demo.bovcore.local/faturas/002"
+                        )
+                )
+        )
+        logger.info("Estado de cobranca do demo reconciliado para assinatura adimplente.")
     }
 }

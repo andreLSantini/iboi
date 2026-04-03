@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @RequestMapping("/api/ia")
-@Tag(name = "IA Dashboard", description = "Dashboard inteligente com predicoes e analises")
+@Tag(name = "IA Dashboard", description = "Dashboard heurístico com scores, predicoes simples e recomendacoes")
 class DashboardInteligenteController(
         private val planoAcessoService: PlanoAcessoService,
         private val dashboardInteligenteUseCase: DashboardInteligenteUseCase
@@ -29,7 +29,7 @@ class DashboardInteligenteController(
         planoAcessoService.requireRecurso(
                 SecurityUtils.currentEmpresaId(),
                 PlanoRecurso.IA_DECISAO,
-                "A camada de IA de decisao sera liberada no futuro do BovCore."
+                "A IA assistida do BovCore precisa estar habilitada no plano para mostrar insights operacionais."
         )
         val dashboard = dashboardInteligenteUseCase.execute(SecurityUtils.currentFarmId())
         return ResponseEntity.ok(dashboard)

@@ -21,7 +21,7 @@ import java.util.UUID
 
 @RestController
 @RequestMapping("/api/alertas")
-@Tag(name = "Alertas estrategicos", description = "Camada futura de alertas e recomendacoes inteligentes")
+@Tag(name = "Alertas e IA assistida", description = "Alertas heurísticos e recomendacoes operacionais do BovCore")
 class AlertaController(
         private val planoAcessoService: PlanoAcessoService,
         private val alertaRepository: AlertaRepository,
@@ -34,7 +34,7 @@ class AlertaController(
         planoAcessoService.requireRecurso(
                 SecurityUtils.currentEmpresaId(),
                 PlanoRecurso.IA_DECISAO,
-                "Os alertas inteligentes serao liberados na futura camada estrategica do BovCore."
+                "A IA assistida do BovCore precisa estar habilitada no plano para mostrar alertas operacionais."
         )
         val alertas = alertaRepository.findByFarmIdOrderByCriadoEmDesc(SecurityUtils.currentFarmId())
         return ResponseEntity.ok(alertas.map { toDto(it) })
@@ -46,7 +46,7 @@ class AlertaController(
         planoAcessoService.requireRecurso(
                 SecurityUtils.currentEmpresaId(),
                 PlanoRecurso.IA_DECISAO,
-                "Os alertas inteligentes serao liberados na futura camada estrategica do BovCore."
+                "A IA assistida do BovCore precisa estar habilitada no plano para mostrar alertas operacionais."
         )
         val alertas = alertaRepository.findByFarmIdAndStatusOrderByPrioridadeDescCriadoEmDesc(
                 SecurityUtils.currentFarmId(),
@@ -61,7 +61,7 @@ class AlertaController(
         planoAcessoService.requireRecurso(
                 SecurityUtils.currentEmpresaId(),
                 PlanoRecurso.IA_DECISAO,
-                "Os alertas inteligentes serao liberados na futura camada estrategica do BovCore."
+                "A IA assistida do BovCore precisa estar habilitada no plano para operar os alertas."
         )
         val alerta = alertaRepository.findById(id).orElse(null) ?: return ResponseEntity.notFound().build()
         alerta.status = StatusAlerta.LIDO
@@ -76,7 +76,7 @@ class AlertaController(
         planoAcessoService.requireRecurso(
                 SecurityUtils.currentEmpresaId(),
                 PlanoRecurso.IA_DECISAO,
-                "Os alertas inteligentes serao liberados na futura camada estrategica do BovCore."
+                "A IA assistida do BovCore precisa estar habilitada no plano para operar os alertas."
         )
         val alerta = alertaRepository.findById(id).orElse(null) ?: return ResponseEntity.notFound().build()
         alerta.status = StatusAlerta.RESOLVIDO
@@ -91,7 +91,7 @@ class AlertaController(
         planoAcessoService.requireRecurso(
                 SecurityUtils.currentEmpresaId(),
                 PlanoRecurso.IA_DECISAO,
-                "A geracao automatica de alertas sera liberada na futura camada estrategica do BovCore."
+                "A IA assistida do BovCore precisa estar habilitada no plano para gerar alertas."
         )
         val quantidade = gerarAlertasUseCase.execute(SecurityUtils.currentFarmId())
         return ResponseEntity.ok(mapOf("alertasGerados" to quantidade))

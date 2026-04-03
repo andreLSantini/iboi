@@ -221,6 +221,48 @@ export interface RelatorioRebanhoResponse {
   pesoMedio?: number | null;
 }
 
+export type PrioridadeAlerta = 'BAIXA' | 'MEDIA' | 'ALTA' | 'CRITICA';
+export type StatusAlertaIA = 'ATIVO' | 'LIDO' | 'RESOLVIDO';
+
+export interface AlertaInteligenteDto {
+  id: string;
+  tipo: string;
+  prioridade: PrioridadeAlerta;
+  titulo: string;
+  mensagem: string;
+  animal?: {
+    id: string;
+    brinco: string;
+    nome?: string;
+  };
+  recomendacao?: string;
+  status: StatusAlertaIA;
+  criadoEm: string;
+}
+
+export interface DashboardInteligenteResponse {
+  animaisRiscoAlto: {
+    animalId: string;
+    brinco: string;
+    nome?: string;
+    scoreRisco: number;
+    fatoresRisco: string;
+    nivel: string;
+  }[];
+  predicoesPeso: {
+    animalId: string;
+    brinco: string;
+    pesoAtual?: number | null;
+    pesoPrevistoEm90Dias: number;
+  }[];
+  alertasCriticos: number;
+  recomendacoesIA: {
+    contexto: string;
+    recomendacao: string;
+  }[];
+  scoreRiscoMedio: number;
+}
+
 export type Sexo = 'MACHO' | 'FEMEA';
 export type StatusAnimal = 'ATIVO' | 'VENDIDO' | 'MORTO' | 'DESCARTADO' | 'TRANSFERIDO';
 export type CategoriaAnimal = 'BEZERRO' | 'NOVILHO' | 'NOVILHA' | 'BOI' | 'VACA' | 'TOURO' | 'MATRIZ';
