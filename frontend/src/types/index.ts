@@ -138,6 +138,14 @@ export type TipoAssinatura = 'TRIAL' | 'FREE' | 'BASIC' | 'PRO' | 'PREMIUM' | 'E
 export type StatusAssinatura = 'TRIAL' | 'ATIVA' | 'VENCIDA' | 'CANCELADA' | 'SUSPENSA';
 export type PeriodoPagamento = 'MENSAL' | 'SEMESTRAL' | 'ANUAL';
 export type MetodoPagamento = 'CARTAO_CREDITO' | 'BOLETO' | 'PIX' | 'TRANSFERENCIA';
+export type FormaPagamentoFinanceira =
+  | 'DINHEIRO'
+  | 'PIX'
+  | 'CARTAO_CREDITO'
+  | 'CARTAO_DEBITO'
+  | 'BOLETO'
+  | 'TRANSFERENCIA'
+  | 'CHEQUE';
 export type PlanoRecurso =
   | 'CADASTRO_BASICO'
   | 'CADASTRO_COMPLETO'
@@ -210,6 +218,68 @@ export interface DashboardResponse {
     animal: string;
     produto: string;
   }[];
+}
+
+export type CategoriaDespesa =
+  | 'ALIMENTACAO'
+  | 'VETERINARIO'
+  | 'MEDICAMENTOS'
+  | 'MAO_DE_OBRA'
+  | 'MANUTENCAO'
+  | 'REPRODUCAO'
+  | 'ENERGIA'
+  | 'IMPOSTOS'
+  | 'TRANSPORTE'
+  | 'OUTRAS';
+
+export interface DespesaDto {
+  id: string;
+  categoria: CategoriaDespesa;
+  descricao: string;
+  valor: number;
+  data: string;
+  formaPagamento: FormaPagamentoFinanceira;
+  responsavel?: string;
+  observacoes?: string;
+}
+
+export interface RegistrarDespesaRequest {
+  categoria: CategoriaDespesa;
+  descricao: string;
+  valor: number;
+  data: string;
+  formaPagamento: FormaPagamentoFinanceira;
+  loteId?: string;
+  animalId?: string;
+  observacoes?: string;
+}
+
+export type TipoReceita = 'VENDA_ANIMAL' | 'VENDA_LOTE' | 'PRESTACAO_SERVICO' | 'BONIFICACAO' | 'OUTRAS';
+
+export interface ReceitaDto {
+  id: string;
+  tipo: TipoReceita;
+  descricao: string;
+  valor: number;
+  data: string;
+  formaPagamento: FormaPagamentoFinanceira;
+  comprador?: string;
+  quantidadeAnimais?: number;
+  responsavel?: string;
+  observacoes?: string;
+}
+
+export interface RegistrarReceitaRequest {
+  tipo: TipoReceita;
+  descricao: string;
+  valor: number;
+  data: string;
+  formaPagamento: FormaPagamentoFinanceira;
+  loteId?: string;
+  animalId?: string;
+  comprador?: string;
+  quantidadeAnimais?: number;
+  observacoes?: string;
 }
 
 export interface RelatorioRebanhoResponse {
