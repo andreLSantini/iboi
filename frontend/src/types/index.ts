@@ -491,6 +491,42 @@ export interface PesagemAnimalDto {
   responsavel?: string;
 }
 
+export type CategoriaAgenda = 'SANITARIO' | 'PESAGEM' | 'REPRODUCAO';
+export type OrigemAgenda = 'AGENDAMENTO' | 'HEURISTICA';
+export type SituacaoAgenda = 'ATRASADO' | 'HOJE' | 'PROXIMO';
+export type PrioridadeAgenda = 'ALTA' | 'MEDIA' | 'BAIXA';
+
+export interface AgendaOperacionalItemDto {
+  id: string;
+  categoria: CategoriaAgenda;
+  origem: OrigemAgenda;
+  titulo: string;
+  descricao: string;
+  dataPrevista: string;
+  situacao: SituacaoAgenda;
+  prioridade: PrioridadeAgenda;
+  diasParaVencimento: number;
+  animal?: {
+    id: string;
+    brinco: string;
+    nome?: string;
+  };
+  lote?: {
+    id: string;
+    nome: string;
+  };
+}
+
+export interface AgendaOperacionalResponse {
+  resumo: {
+    total: number;
+    atrasados: number;
+    hoje: number;
+    proximos7Dias: number;
+  };
+  itens: AgendaOperacionalItemDto[];
+}
+
 export interface RegistrarEventoRequest {
   animalId: string;
   tipo: TipoEvento;
