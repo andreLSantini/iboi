@@ -2,10 +2,10 @@ package com.iboi.rebanho.usecase
 
 import com.iboi.identity.infrastructure.repository.FarmRepository
 import com.iboi.identity.infrastructure.repository.UsuarioRepository
-import com.iboi.rebanho.api.dto.AnimalResumoDto
 import com.iboi.rebanho.api.dto.EventoDto
-import com.iboi.rebanho.api.dto.LoteResumoDto
 import com.iboi.rebanho.api.dto.RegistrarEventoRequest
+import com.iboi.rebanho.api.dto.toDto
+import com.iboi.rebanho.domain.Sexo
 import com.iboi.rebanho.domain.Evento
 import com.iboi.rebanho.domain.TipoEvento
 import com.iboi.rebanho.repository.AnimalRepository
@@ -47,6 +47,8 @@ class RegistrarEventoUseCase(
 
         val responsavel = usuarioRepository.findByEmail(emailUsuario)
 
+        validarEventoReprodutivo(animal.sexo, request)
+
         val evento = eventoRepository.save(
                 Evento(
                         animal = animal,
@@ -60,6 +62,11 @@ class RegistrarEventoUseCase(
                         unidadeMedida = request.unidadeMedida,
                         loteDestino = loteDestino,
                         valor = request.valor,
+                        reprodutorNome = request.reprodutorNome,
+                        protocoloReprodutivo = request.protocoloReprodutivo,
+                        diagnosticoPositivo = request.diagnosticoPositivo,
+                        dataPrevistaParto = request.dataPrevistaParto ?: dataPrevistaPartoAutomatica(request),
+                        observacaoReprodutiva = request.observacaoReprodutiva,
                         responsavel = responsavel
                 )
         )
@@ -76,29 +83,30 @@ class RegistrarEventoUseCase(
             animalRepository.save(animal)
         }
 
-        return toDto(evento)
+        return evento.toDto()
     }
 
-    private fun toDto(evento: Evento): EventoDto {
-        return EventoDto(
-                id = evento.id!!,
-                animal = AnimalResumoDto(
-                        id = evento.animal.id!!,
-                        brinco = evento.animal.brinco,
-                        nome = evento.animal.nome
-                ),
-                tipo = evento.tipo,
-                data = evento.data,
-                descricao = evento.descricao,
-                peso = evento.peso,
-                produto = evento.produto,
-                dose = evento.dose,
-                unidadeMedida = evento.unidadeMedida,
-                loteDestino = evento.loteDestino?.let {
-                    LoteResumoDto(it.id!!, it.nome)
-                },
-                valor = evento.valor,
-                responsavel = evento.responsavel?.nome
+    private fun validarEventoReprodutivo(sexo: Sexo, request: RegistrarEventoRequest) {
+        val eventoReprodutivo = request.tipo in setOf(
+                TipoEvento.INSEMINACAO,
+                TipoEvento.COBERTURA,
+                TipoEvento.DIAGNOSTICO_GESTACAO,
+                TipoEvento.PARTO
         )
+
+        if (!eventoReprodutivo) {
+            return
+        }
+
+        if (sexo != Sexo.FEMEA) {
+            throw IllegalArgumentException("Eventos reprodutivos desta etapa so podem ser registrados para femeas")
+        }
     }
+
+    private fun dataPrevistaPartoAutomatica(request: RegistrarEventoRequest) =
+            if (request.tipo == TipoEvento.INSEMINACAO || request.tipo == TipoEvento.COBERTURA) {
+                request.data.plusDays(285)
+            } else {
+                null
+            }
 }

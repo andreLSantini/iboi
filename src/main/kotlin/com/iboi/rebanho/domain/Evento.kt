@@ -63,6 +63,21 @@ class Evento(
         @Column(precision = 10, scale = 2)
         var valor: BigDecimal? = null,
 
+        @Column(length = 120)
+        var reprodutorNome: String? = null,
+
+        @Column(length = 120)
+        var protocoloReprodutivo: String? = null,
+
+        @Column
+        var diagnosticoPositivo: Boolean? = null,
+
+        @Column
+        var dataPrevistaParto: LocalDate? = null,
+
+        @Column(length = 500)
+        var observacaoReprodutiva: String? = null,
+
         @ManyToOne
         @JoinColumn(name = "responsavel_id")
         val responsavel: Usuario? = null,

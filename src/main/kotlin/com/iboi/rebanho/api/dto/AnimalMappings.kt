@@ -62,6 +62,11 @@ fun Evento.toDto(): EventoDto = EventoDto(
         unidadeMedida = unidadeMedida,
         loteDestino = loteDestino?.let { LoteResumoDto(it.id!!, it.nome) },
         valor = valor,
+        reprodutorNome = reprodutorNome,
+        protocoloReprodutivo = protocoloReprodutivo,
+        diagnosticoPositivo = diagnosticoPositivo,
+        dataPrevistaParto = dataPrevistaParto,
+        observacaoReprodutiva = observacaoReprodutiva,
         responsavel = responsavel?.nome
 )
 

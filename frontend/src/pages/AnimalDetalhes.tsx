@@ -187,6 +187,7 @@ export default function AnimalDetalhes() {
   const [animal, setAnimal] = useState<AnimalDto | null>(null);
   const [pesagens, setPesagens] = useState<PesagemAnimalDto[]>([]);
   const [eventos, setEventos] = useState<EventoDto[]>([]);
+  const [eventosReprodutivos, setEventosReprodutivos] = useState<EventoDto[]>([]);
   const [vacinacoes, setVacinacoes] = useState<VacinacaoAnimalDto[]>([]);
   const [movimentacoes, setMovimentacoes] = useState<MovimentacaoAnimalDto[]>([]);
   const [pastures, setPastures] = useState<Pasture[]>([]);
@@ -268,6 +269,7 @@ export default function AnimalDetalhes() {
       setAnimal(animalData);
       setPesagens(Array.isArray(fichaCompleta.pesagens) ? fichaCompleta.pesagens : []);
       setEventos(Array.isArray(fichaCompleta.eventos) ? fichaCompleta.eventos : []);
+      setEventosReprodutivos(Array.isArray(fichaCompleta.eventosReprodutivos) ? fichaCompleta.eventosReprodutivos : []);
       setVacinacoes(Array.isArray(fichaCompleta.vacinacoes) ? fichaCompleta.vacinacoes : []);
       setMovimentacoes(Array.isArray(fichaCompleta.movimentacoes) ? fichaCompleta.movimentacoes : []);
       setLotes(Array.isArray(lotesRes.data) ? lotesRes.data : lotesRes.data.content || []);
@@ -391,13 +393,30 @@ export default function AnimalDetalhes() {
           : 'Registre a primeira vacinacao para dar contexto sanitario ao animal.',
       },
       {
+        title: eventosReprodutivos.length > 0 ? 'Historico reprodutivo ativo' : 'Sem eventos reprodutivos',
+        description: eventosReprodutivos.length > 0
+          ? `${eventosReprodutivos.length} registro(s) reprodutivos consolidados na ficha.`
+          : 'Use eventos de cobertura, inseminacao, diagnostico e parto para montar a linha do tempo da matriz.',
+      },
+      {
         title: pesagensOrdenadas.length > 1 ? 'Base produtiva disponivel' : 'Pouca base produtiva',
         description: pesagensOrdenadas.length > 1
           ? `Curva de peso com ${pesagensOrdenadas.length} pontos e GMD estimado em ${ganhoPesoMedio} kg/dia.`
           : 'Registre mais pesagens para liberar analises de ganho e desempenho.',
       },
     ];
-  }, [animal, vacinacoes.length, pesagensOrdenadas.length, ganhoPesoMedio]);
+  }, [animal, vacinacoes.length, eventosReprodutivos.length, pesagensOrdenadas.length, ganhoPesoMedio]);
+
+  const resumoReprodutivo = useMemo(() => {
+    const ultimaCobertura = eventosReprodutivos.find((evento) => evento.tipo === 'COBERTURA' || evento.tipo === 'INSEMINACAO');
+    const ultimoDiagnostico = eventosReprodutivos.find((evento) => evento.tipo === 'DIAGNOSTICO_GESTACAO');
+    const ultimoParto = eventosReprodutivos.find((evento) => evento.tipo === 'PARTO');
+    return {
+      ultimaCobertura,
+      ultimoDiagnostico,
+      ultimoParto,
+    };
+  }, [eventosReprodutivos]);
 
   async function submitVaccination(e: React.FormEvent) {
     e.preventDefault();
@@ -922,6 +941,49 @@ export default function AnimalDetalhes() {
               <InfoRow label="Vacinas registradas" value={String(vacinacoes.length)} />
               <InfoRow label="Ultima aplicacao" value={vacinacoes[0] ? new Date(vacinacoes[0].aplicadaEm).toLocaleDateString('pt-BR') : '-'} />
               <InfoRow label="Proxima dose" value={nextDose ? new Date(nextDose).toLocaleDateString('pt-BR') : '-'} />
+            </div>
+          </section>
+
+          <section className="card">
+            <div className="mb-4 flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-fuchsia-600" />
+              <h2 className="text-xl font-bold text-gray-900">Resumo reprodutivo</h2>
+            </div>
+            <div className="space-y-3">
+              <InfoRow
+                label="Ultima cobertura / IATF"
+                value={
+                  resumoReprodutivo.ultimaCobertura
+                    ? `${resumoReprodutivo.ultimaCobertura.tipo.replace(/_/g, ' ')} em ${new Date(resumoReprodutivo.ultimaCobertura.data).toLocaleDateString('pt-BR')}`
+                    : '-'
+                }
+              />
+              <InfoRow
+                label="Ultimo diagnostico"
+                value={
+                  resumoReprodutivo.ultimoDiagnostico
+                    ? `${resumoReprodutivo.ultimoDiagnostico.diagnosticoPositivo === true ? 'Positivo' : resumoReprodutivo.ultimoDiagnostico.diagnosticoPositivo === false ? 'Negativo' : 'Registrado'} em ${new Date(resumoReprodutivo.ultimoDiagnostico.data).toLocaleDateString('pt-BR')}`
+                    : '-'
+                }
+              />
+              <InfoRow
+                label="Data prevista de parto"
+                value={
+                  resumoReprodutivo.ultimoDiagnostico?.dataPrevistaParto
+                    ? new Date(resumoReprodutivo.ultimoDiagnostico.dataPrevistaParto).toLocaleDateString('pt-BR')
+                    : resumoReprodutivo.ultimaCobertura?.dataPrevistaParto
+                      ? new Date(resumoReprodutivo.ultimaCobertura.dataPrevistaParto).toLocaleDateString('pt-BR')
+                      : '-'
+                }
+              />
+              <InfoRow
+                label="Ultimo parto"
+                value={
+                  resumoReprodutivo.ultimoParto
+                    ? new Date(resumoReprodutivo.ultimoParto.data).toLocaleDateString('pt-BR')
+                    : '-'
+                }
+              />
             </div>
           </section>
 

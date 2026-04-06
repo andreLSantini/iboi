@@ -37,7 +37,20 @@ data class RegistrarEventoRequest(
         val loteDestinoId: UUID? = null,
 
         @field:DecimalMin(value = "0.0", message = "Valor deve ser maior que zero")
-        val valor: BigDecimal? = null
+        val valor: BigDecimal? = null,
+
+        @field:Size(max = 120, message = "Reprodutor deve ter no maximo 120 caracteres")
+        val reprodutorNome: String? = null,
+
+        @field:Size(max = 120, message = "Protocolo reprodutivo deve ter no maximo 120 caracteres")
+        val protocoloReprodutivo: String? = null,
+
+        val diagnosticoPositivo: Boolean? = null,
+
+        val dataPrevistaParto: LocalDate? = null,
+
+        @field:Size(max = 500, message = "Observacao reprodutiva deve ter no maximo 500 caracteres")
+        val observacaoReprodutiva: String? = null
 )
 
 data class EventoDto(
@@ -52,6 +65,11 @@ data class EventoDto(
         val unidadeMedida: String?,
         val loteDestino: LoteResumoDto?,
         val valor: BigDecimal?,
+        val reprodutorNome: String?,
+        val protocoloReprodutivo: String?,
+        val diagnosticoPositivo: Boolean?,
+        val dataPrevistaParto: LocalDate?,
+        val observacaoReprodutiva: String?,
         val responsavel: String?
 )
 

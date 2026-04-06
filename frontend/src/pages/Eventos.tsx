@@ -36,7 +36,12 @@ export default function Eventos() {
     produto: '',
     dose: undefined,
     unidadeMedida: '',
-    valor: undefined
+    valor: undefined,
+    reprodutorNome: '',
+    protocoloReprodutivo: '',
+    diagnosticoPositivo: undefined,
+    dataPrevistaParto: '',
+    observacaoReprodutiva: ''
   });
 
   useEffect(() => {
@@ -106,7 +111,12 @@ export default function Eventos() {
         produto: evento.produto || '',
         dose: evento.dose,
         unidadeMedida: evento.unidadeMedida || '',
-        valor: evento.valor
+        valor: evento.valor,
+        reprodutorNome: evento.reprodutorNome || '',
+        protocoloReprodutivo: evento.protocoloReprodutivo || '',
+        diagnosticoPositivo: evento.diagnosticoPositivo,
+        dataPrevistaParto: evento.dataPrevistaParto || '',
+        observacaoReprodutiva: evento.observacaoReprodutiva || ''
       });
     } else {
       setEditingEvento(null);
@@ -119,7 +129,12 @@ export default function Eventos() {
         produto: '',
         dose: undefined,
         unidadeMedida: '',
-        valor: undefined
+        valor: undefined,
+        reprodutorNome: '',
+        protocoloReprodutivo: '',
+        diagnosticoPositivo: undefined,
+        dataPrevistaParto: '',
+        observacaoReprodutiva: ''
       });
     }
     setShowModal(true);
@@ -188,6 +203,12 @@ export default function Eventos() {
     formData.tipo === 'TRATAMENTO' ||
     formData.tipo === 'VACINA' ||
     formData.tipo === 'VERMIFUGO';
+  const showReproductiveFields =
+    formData.tipo === 'INSEMINACAO' ||
+    formData.tipo === 'COBERTURA' ||
+    formData.tipo === 'DIAGNOSTICO_GESTACAO' ||
+    formData.tipo === 'PARTO';
+  const showDiagnosticoField = formData.tipo === 'DIAGNOSTICO_GESTACAO';
 
   if (loading) {
     return (
@@ -529,6 +550,84 @@ export default function Eventos() {
                       placeholder="Ex: 150.00"
                     />
                   </div>
+                )}
+
+                {showReproductiveFields && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Reprodutor / Touro
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.reprodutorNome || ''}
+                        onChange={(e) => setFormData({ ...formData, reprodutorNome: e.target.value })}
+                        className="input-field"
+                        placeholder="Nome ou identificacao do reprodutor"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Protocolo reprodutivo
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.protocoloReprodutivo || ''}
+                        onChange={(e) => setFormData({ ...formData, protocoloReprodutivo: e.target.value })}
+                        className="input-field"
+                        placeholder="IATF, monta natural, sincronizacao..."
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Data prevista de parto
+                      </label>
+                      <input
+                        type="date"
+                        value={formData.dataPrevistaParto || ''}
+                        onChange={(e) => setFormData({ ...formData, dataPrevistaParto: e.target.value })}
+                        className="input-field"
+                      />
+                    </div>
+
+                    {showDiagnosticoField && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Resultado do diagnostico
+                        </label>
+                        <select
+                          value={formData.diagnosticoPositivo == null ? '' : String(formData.diagnosticoPositivo)}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              diagnosticoPositivo:
+                                e.target.value === '' ? undefined : e.target.value === 'true'
+                            })
+                          }
+                          className="input-field"
+                        >
+                          <option value="">Nao informado</option>
+                          <option value="true">Prenhez positiva</option>
+                          <option value="false">Prenhez negativa</option>
+                        </select>
+                      </div>
+                    )}
+
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Observacao reprodutiva
+                      </label>
+                      <textarea
+                        value={formData.observacaoReprodutiva || ''}
+                        onChange={(e) => setFormData({ ...formData, observacaoReprodutiva: e.target.value })}
+                        className="input-field"
+                        rows={2}
+                        placeholder="Detalhes de cio, protocolo, parto ou diagnostico..."
+                      />
+                    </div>
+                  </>
                 )}
 
                 <div className="md:col-span-2">

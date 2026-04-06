@@ -4,6 +4,7 @@ import com.iboi.rebanho.api.dto.AnimalFichaCompletaDto
 import com.iboi.rebanho.api.dto.toDto
 import com.iboi.rebanho.api.exception.AcessoNegadoException
 import com.iboi.rebanho.api.exception.AnimalNaoEncontradoException
+import com.iboi.rebanho.domain.TipoEvento
 import com.iboi.rebanho.repository.AnimalRepository
 import com.iboi.rebanho.repository.EventoRepository
 import com.iboi.rebanho.repository.MovimentacaoAnimalRepository
@@ -32,6 +33,16 @@ class BuscarFichaCompletaAnimalUseCase(
                 animal = animal.toDto(),
                 pesagens = listarPesagensAnimalUseCase.execute(animalId, farmId),
                 eventos = eventoRepository.findByAnimalIdOrderByDataDesc(animalId).map { it.toDto() },
+                eventosReprodutivos = eventoRepository.findByAnimalIdOrderByDataDesc(animalId)
+                        .filter {
+                            it.tipo in setOf(
+                                    TipoEvento.INSEMINACAO,
+                                    TipoEvento.COBERTURA,
+                                    TipoEvento.DIAGNOSTICO_GESTACAO,
+                                    TipoEvento.PARTO
+                            )
+                        }
+                        .map { it.toDto() },
                 vacinacoes = vacinacaoAnimalRepository.findByAnimalIdOrderByAplicadaEmDescCriadoEmDesc(animalId).map { it.toDto() },
                 movimentacoes = movimentacaoAnimalRepository.findByAnimalIdOrderByMovimentadaEmDescCriadoEmDesc(animalId).map { it.toDto() }
         )

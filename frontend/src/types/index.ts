@@ -468,6 +468,11 @@ export interface EventoDto {
     nome: string;
   };
   valor?: number;
+  reprodutorNome?: string;
+  protocoloReprodutivo?: string;
+  diagnosticoPositivo?: boolean;
+  dataPrevistaParto?: string;
+  observacaoReprodutiva?: string;
   responsavel?: string;
 }
 
@@ -475,6 +480,7 @@ export interface AnimalFichaCompletaDto {
   animal: AnimalDto;
   pesagens: PesagemAnimalDto[];
   eventos: EventoDto[];
+  eventosReprodutivos: EventoDto[];
   vacinacoes: VacinacaoAnimalDto[];
   movimentacoes: MovimentacaoAnimalDto[];
 }
@@ -538,6 +544,11 @@ export interface RegistrarEventoRequest {
   unidadeMedida?: string;
   loteDestinoId?: string;
   valor?: number;
+  reprodutorNome?: string;
+  protocoloReprodutivo?: string;
+  diagnosticoPositivo?: boolean;
+  dataPrevistaParto?: string;
+  observacaoReprodutiva?: string;
 }
 
 export interface LoteDto {

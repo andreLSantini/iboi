@@ -224,6 +224,7 @@ data class AnimalFichaCompletaDto(
         val animal: AnimalDto,
         val pesagens: List<PesagemAnimalDto>,
         val eventos: List<EventoDto>,
+        val eventosReprodutivos: List<EventoDto>,
         val vacinacoes: List<VacinacaoAnimalDto>,
         val movimentacoes: List<MovimentacaoAnimalDto>
 )
