@@ -75,6 +75,9 @@ class DespesaController(
                     descricao = it.descricao,
                     valor = it.valor,
                     data = it.data,
+                    dataVencimento = it.dataVencimento,
+                    dataLiquidacao = it.dataLiquidacao,
+                    status = it.status,
                     formaPagamento = it.formaPagamento,
                     responsavel = it.responsavel?.nome,
                     observacoes = it.observacoes

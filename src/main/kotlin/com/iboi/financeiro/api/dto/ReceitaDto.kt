@@ -1,6 +1,7 @@
 package com.iboi.financeiro.api.dto
 
 import com.iboi.financeiro.domain.FormaPagamento
+import com.iboi.financeiro.domain.StatusLancamentoFinanceiro
 import com.iboi.financeiro.domain.TipoReceita
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -11,6 +12,9 @@ data class RegistrarReceitaRequest(
         val descricao: String,
         val valor: BigDecimal,
         val data: LocalDate,
+        val dataVencimento: LocalDate? = null,
+        val dataLiquidacao: LocalDate? = null,
+        val status: StatusLancamentoFinanceiro? = null,
         val formaPagamento: FormaPagamento,
         val loteId: UUID? = null,
         val animalId: UUID? = null,
@@ -25,6 +29,9 @@ data class ReceitaDto(
         val descricao: String,
         val valor: BigDecimal,
         val data: LocalDate,
+        val dataVencimento: LocalDate,
+        val dataLiquidacao: LocalDate?,
+        val status: StatusLancamentoFinanceiro,
         val formaPagamento: FormaPagamento,
         val comprador: String?,
         val quantidadeAnimais: Int?,

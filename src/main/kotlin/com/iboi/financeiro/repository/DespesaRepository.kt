@@ -15,6 +15,12 @@ interface DespesaRepository : JpaRepository<Despesa, UUID> {
     @Query("SELECT d FROM Despesa d WHERE d.farm.id = :farmId AND d.data BETWEEN :dataInicio AND :dataFim ORDER BY d.data DESC")
     fun findByFarmIdAndDataBetween(farmId: UUID, dataInicio: LocalDate, dataFim: LocalDate): List<Despesa>
 
+    @Query("SELECT d FROM Despesa d WHERE d.farm.id = :farmId AND d.dataVencimento BETWEEN :dataInicio AND :dataFim ORDER BY d.dataVencimento ASC, d.data ASC")
+    fun findByFarmIdAndDataVencimentoBetween(farmId: UUID, dataInicio: LocalDate, dataFim: LocalDate): List<Despesa>
+
+    @Query("SELECT d FROM Despesa d WHERE d.farm.id = :farmId AND d.dataLiquidacao BETWEEN :dataInicio AND :dataFim ORDER BY d.dataLiquidacao ASC")
+    fun findByFarmIdAndDataLiquidacaoBetween(farmId: UUID, dataInicio: LocalDate, dataFim: LocalDate): List<Despesa>
+
     @Query("SELECT d FROM Despesa d WHERE d.farm.id = :farmId AND d.categoria = :categoria ORDER BY d.data DESC")
     fun findByFarmIdAndCategoria(farmId: UUID, categoria: CategoriaDespesa): List<Despesa>
 

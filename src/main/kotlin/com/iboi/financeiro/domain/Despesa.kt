@@ -41,9 +41,19 @@ class Despesa(
         @Column(nullable = false)
         var data: LocalDate,
 
+        @Column(name = "data_vencimento", nullable = false)
+        var dataVencimento: LocalDate,
+
+        @Column(name = "data_liquidacao")
+        var dataLiquidacao: LocalDate? = null,
+
         @Enumerated(EnumType.STRING)
         @Column(nullable = false)
         var formaPagamento: FormaPagamento,
+
+        @Enumerated(EnumType.STRING)
+        @Column(nullable = false)
+        var status: StatusLancamentoFinanceiro,
 
         @ManyToOne
         @JoinColumn(name = "lote_id")

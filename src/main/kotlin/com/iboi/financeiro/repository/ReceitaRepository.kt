@@ -15,6 +15,12 @@ interface ReceitaRepository : JpaRepository<Receita, UUID> {
     @Query("SELECT r FROM Receita r WHERE r.farm.id = :farmId AND r.data BETWEEN :dataInicio AND :dataFim ORDER BY r.data DESC")
     fun findByFarmIdAndDataBetween(farmId: UUID, dataInicio: LocalDate, dataFim: LocalDate): List<Receita>
 
+    @Query("SELECT r FROM Receita r WHERE r.farm.id = :farmId AND r.dataVencimento BETWEEN :dataInicio AND :dataFim ORDER BY r.dataVencimento ASC, r.data ASC")
+    fun findByFarmIdAndDataVencimentoBetween(farmId: UUID, dataInicio: LocalDate, dataFim: LocalDate): List<Receita>
+
+    @Query("SELECT r FROM Receita r WHERE r.farm.id = :farmId AND r.dataLiquidacao BETWEEN :dataInicio AND :dataFim ORDER BY r.dataLiquidacao ASC")
+    fun findByFarmIdAndDataLiquidacaoBetween(farmId: UUID, dataInicio: LocalDate, dataFim: LocalDate): List<Receita>
+
     @Query("SELECT SUM(r.valor) FROM Receita r WHERE r.farm.id = :farmId AND r.data BETWEEN :dataInicio AND :dataFim")
     fun sumByFarmIdAndDataBetween(farmId: UUID, dataInicio: LocalDate, dataFim: LocalDate): BigDecimal?
 

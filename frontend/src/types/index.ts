@@ -146,6 +146,7 @@ export type FormaPagamentoFinanceira =
   | 'BOLETO'
   | 'TRANSFERENCIA'
   | 'CHEQUE';
+export type StatusLancamentoFinanceiro = 'PENDENTE' | 'PAGO' | 'RECEBIDO' | 'VENCIDO';
 export type PlanoRecurso =
   | 'CADASTRO_BASICO'
   | 'CADASTRO_COMPLETO'
@@ -238,6 +239,9 @@ export interface DespesaDto {
   descricao: string;
   valor: number;
   data: string;
+  dataVencimento: string;
+  dataLiquidacao?: string;
+  status: StatusLancamentoFinanceiro;
   formaPagamento: FormaPagamentoFinanceira;
   responsavel?: string;
   observacoes?: string;
@@ -248,6 +252,9 @@ export interface RegistrarDespesaRequest {
   descricao: string;
   valor: number;
   data: string;
+  dataVencimento?: string;
+  dataLiquidacao?: string;
+  status?: StatusLancamentoFinanceiro;
   formaPagamento: FormaPagamentoFinanceira;
   loteId?: string;
   animalId?: string;
@@ -262,6 +269,9 @@ export interface ReceitaDto {
   descricao: string;
   valor: number;
   data: string;
+  dataVencimento: string;
+  dataLiquidacao?: string;
+  status: StatusLancamentoFinanceiro;
   formaPagamento: FormaPagamentoFinanceira;
   comprador?: string;
   quantidadeAnimais?: number;
@@ -274,12 +284,50 @@ export interface RegistrarReceitaRequest {
   descricao: string;
   valor: number;
   data: string;
+  dataVencimento?: string;
+  dataLiquidacao?: string;
+  status?: StatusLancamentoFinanceiro;
   formaPagamento: FormaPagamentoFinanceira;
   loteId?: string;
   animalId?: string;
   comprador?: string;
   quantidadeAnimais?: number;
   observacoes?: string;
+}
+
+export type TipoMovimentoCaixa = 'ENTRADA' | 'SAIDA';
+
+export interface FluxoCaixaResumoDto {
+  dataInicio: string;
+  dataFim: string;
+  totalRecebido: number;
+  totalPago: number;
+  totalPrevistoReceber: number;
+  totalPrevistoPagar: number;
+  totalPendenteReceber: number;
+  totalPendentePagar: number;
+  saldoRealizado: number;
+  saldoProjetado: number;
+  totalVencido: number;
+}
+
+export interface MovimentoFluxoCaixaDto {
+  id: string;
+  tipo: TipoMovimentoCaixa;
+  descricao: string;
+  origem: string;
+  valor: number;
+  dataCompetencia: string;
+  dataVencimento: string;
+  dataLiquidacao?: string;
+  status: StatusLancamentoFinanceiro;
+  formaPagamento: FormaPagamentoFinanceira;
+  contraparte?: string;
+}
+
+export interface FluxoCaixaDto {
+  resumo: FluxoCaixaResumoDto;
+  movimentos: MovimentoFluxoCaixaDto[];
 }
 
 export interface RelatorioRebanhoResponse {

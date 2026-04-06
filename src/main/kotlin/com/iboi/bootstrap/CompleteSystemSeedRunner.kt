@@ -3,6 +3,7 @@ package com.iboi.bootstrap
 import com.iboi.financeiro.domain.CategoriaDespesa
 import com.iboi.financeiro.domain.Despesa
 import com.iboi.financeiro.domain.FormaPagamento
+import com.iboi.financeiro.domain.StatusLancamentoFinanceiro
 import com.iboi.financeiro.repository.DespesaRepository
 import com.iboi.ia.domain.Alerta
 import com.iboi.ia.domain.PrioridadeAlerta
@@ -522,6 +523,9 @@ class CompleteSystemSeedRunner(
                                 valor = BigDecimal("4820.00"),
                                 data = hoje.minusDays(8),
                                 formaPagamento = FormaPagamento.PIX,
+                                dataVencimento = hoje.minusDays(6),
+                                dataLiquidacao = hoje.minusDays(6),
+                                status = StatusLancamentoFinanceiro.PAGO,
                                 lote = loteEngorda,
                                 responsavel = operador,
                                 observacoes = "Compra mensal para 60 dias."
@@ -533,6 +537,8 @@ class CompleteSystemSeedRunner(
                                 valor = BigDecimal("1360.00"),
                                 data = hoje.minusDays(15),
                                 formaPagamento = FormaPagamento.BOLETO,
+                                dataVencimento = hoje.minusDays(10),
+                                status = StatusLancamentoFinanceiro.VENCIDO,
                                 animal = animal1,
                                 responsavel = operador
                         ),
@@ -543,6 +549,9 @@ class CompleteSystemSeedRunner(
                                 valor = BigDecimal("2280.00"),
                                 data = hoje.minusDays(19),
                                 formaPagamento = FormaPagamento.TRANSFERENCIA,
+                                dataVencimento = hoje.minusDays(17),
+                                dataLiquidacao = hoje.minusDays(17),
+                                status = StatusLancamentoFinanceiro.PAGO,
                                 lote = loteQuarentena,
                                 responsavel = admin
                         ),
@@ -553,6 +562,8 @@ class CompleteSystemSeedRunner(
                                 valor = BigDecimal("890.00"),
                                 data = hoje.minusDays(9),
                                 formaPagamento = FormaPagamento.PIX,
+                                dataVencimento = hoje.plusDays(2),
+                                status = StatusLancamentoFinanceiro.PENDENTE,
                                 animal = animal5,
                                 responsavel = admin
                         )
