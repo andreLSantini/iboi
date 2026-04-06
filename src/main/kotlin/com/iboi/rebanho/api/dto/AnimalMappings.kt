@@ -3,6 +3,7 @@ package com.iboi.rebanho.api.dto
 import com.iboi.identity.domain.Farm
 import com.iboi.identity.domain.Pasture
 import com.iboi.rebanho.domain.Animal
+import com.iboi.rebanho.domain.Evento
 import com.iboi.rebanho.domain.MovimentacaoAnimal
 import com.iboi.rebanho.domain.VacinacaoAnimal
 import java.time.LocalDate
@@ -43,6 +44,25 @@ fun Pasture.toResumoDto(): PastureResumoDto = PastureResumoDto(
 fun Farm.toResumoDto(): FarmResumoDto = FarmResumoDto(
         id = id!!,
         nome = name
+)
+
+fun Evento.toDto(): EventoDto = EventoDto(
+        id = id!!,
+        animal = AnimalResumoDto(
+                id = animal.id!!,
+                brinco = animal.brinco,
+                nome = animal.nome
+        ),
+        tipo = tipo,
+        data = data,
+        descricao = descricao,
+        peso = peso,
+        produto = produto,
+        dose = dose,
+        unidadeMedida = unidadeMedida,
+        loteDestino = loteDestino?.let { LoteResumoDto(it.id!!, it.nome) },
+        valor = valor,
+        responsavel = responsavel?.nome
 )
 
 fun MovimentacaoAnimal.toDto(): MovimentacaoAnimalDto = MovimentacaoAnimalDto(

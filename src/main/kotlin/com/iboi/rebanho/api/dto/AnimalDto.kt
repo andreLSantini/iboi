@@ -218,3 +218,10 @@ data class VacinacaoAnimalDto(
         val observacoes: String?,
         val responsavel: String?
 )
+
+data class AnimalFichaCompletaDto(
+        val animal: AnimalDto,
+        val eventos: List<EventoDto>,
+        val vacinacoes: List<VacinacaoAnimalDto>,
+        val movimentacoes: List<MovimentacaoAnimalDto>
+)

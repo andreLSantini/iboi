@@ -3,6 +3,7 @@ package com.iboi.rebanho.api
 import com.iboi.plano.model.PlanoRecurso
 import com.iboi.plano.service.PlanoAcessoService
 import com.iboi.rebanho.api.dto.AnimalDto
+import com.iboi.rebanho.api.dto.AnimalFichaCompletaDto
 import com.iboi.rebanho.api.dto.AtualizarAnimalRequest
 import com.iboi.rebanho.api.dto.CadastrarAnimalRequest
 import com.iboi.rebanho.api.dto.FiltrarAnimaisRequest
@@ -16,6 +17,7 @@ import com.iboi.rebanho.domain.Sexo
 import com.iboi.rebanho.domain.StatusAnimal
 import com.iboi.rebanho.usecase.AtualizarAnimalUseCase
 import com.iboi.rebanho.usecase.BuscarAnimalPorIdUseCase
+import com.iboi.rebanho.usecase.BuscarFichaCompletaAnimalUseCase
 import com.iboi.rebanho.usecase.CadastrarAnimalUseCase
 import com.iboi.rebanho.usecase.DeletarAnimalUseCase
 import com.iboi.rebanho.usecase.ImportarAnimaisCsvUseCase
@@ -56,6 +58,7 @@ class AnimalController(
         private val cadastrarAnimalUseCase: CadastrarAnimalUseCase,
         private val listarAnimaisUseCase: ListarAnimaisUseCase,
         private val buscarAnimalPorIdUseCase: BuscarAnimalPorIdUseCase,
+        private val buscarFichaCompletaAnimalUseCase: BuscarFichaCompletaAnimalUseCase,
         private val atualizarAnimalUseCase: AtualizarAnimalUseCase,
         private val deletarAnimalUseCase: DeletarAnimalUseCase,
         private val importarAnimaisCsvUseCase: ImportarAnimaisCsvUseCase,
@@ -97,6 +100,12 @@ class AnimalController(
     @Operation(summary = "Buscar animal por ID", description = "Retorna detalhes de um animal especifico")
     fun buscarPorId(@PathVariable id: UUID): ResponseEntity<AnimalDto> {
         return ResponseEntity.ok(buscarAnimalPorIdUseCase.execute(id, SecurityUtils.currentFarmId()))
+    }
+
+    @GetMapping("/{id}/ficha-completa")
+    @Operation(summary = "Buscar ficha completa do animal", description = "Retorna a ficha operacional agregada do animal com eventos, vacinacoes e movimentacoes")
+    fun buscarFichaCompleta(@PathVariable id: UUID): ResponseEntity<AnimalFichaCompletaDto> {
+        return ResponseEntity.ok(buscarFichaCompletaAnimalUseCase.execute(id, SecurityUtils.currentFarmId()))
     }
 
     @PutMapping("/{id}")

@@ -2,7 +2,7 @@ import { Activity, Calendar, GitBranch, Loader2, MapPinned, ShieldPlus, Tag, Tre
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
-import type { AnimalDto, EventoDto, MovimentacaoAnimalDto, VacinacaoAnimalDto } from '../types';
+import type { AnimalDto, AnimalFichaCompletaDto, EventoDto, MovimentacaoAnimalDto, VacinacaoAnimalDto } from '../types';
 
 type Props = {
   animalId: string | null;
@@ -38,17 +38,12 @@ export default function AnimalQuickViewModal({ animalId, open, onClose }: Props)
         setLoading(true);
         setError('');
 
-        const [animalRes, eventosRes, vacinacoesRes, movimentacoesRes] = await Promise.all([
-          api.get<AnimalDto>(`/api/animais/${animalId}`),
-          api.get<EventoDto[]>(`/api/eventos/animal/${animalId}`),
-          api.get<VacinacaoAnimalDto[]>(`/api/animais/${animalId}/vacinacoes`),
-          api.get<MovimentacaoAnimalDto[]>(`/api/animais/${animalId}/movimentacoes`),
-        ]);
+        const fichaRes = await api.get<AnimalFichaCompletaDto>(`/api/animais/${animalId}/ficha-completa`);
 
-        setAnimal(animalRes.data);
-        setEventos(Array.isArray(eventosRes.data) ? eventosRes.data : []);
-        setVacinacoes(Array.isArray(vacinacoesRes.data) ? vacinacoesRes.data : []);
-        setMovimentacoes(Array.isArray(movimentacoesRes.data) ? movimentacoesRes.data : []);
+        setAnimal(fichaRes.data.animal);
+        setEventos(Array.isArray(fichaRes.data.eventos) ? fichaRes.data.eventos : []);
+        setVacinacoes(Array.isArray(fichaRes.data.vacinacoes) ? fichaRes.data.vacinacoes : []);
+        setMovimentacoes(Array.isArray(fichaRes.data.movimentacoes) ? fichaRes.data.movimentacoes : []);
       } catch (requestError: any) {
         setError(requestError.response?.data?.message || 'Nao foi possivel carregar a ficha rapida do animal.');
       } finally {

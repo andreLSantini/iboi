@@ -2,10 +2,9 @@ package com.iboi.rebanho.api
 
 import com.iboi.plano.model.PlanoRecurso
 import com.iboi.plano.service.PlanoAcessoService
-import com.iboi.rebanho.api.dto.AnimalResumoDto
 import com.iboi.rebanho.api.dto.EventoDto
-import com.iboi.rebanho.api.dto.LoteResumoDto
 import com.iboi.rebanho.api.dto.RegistrarEventoRequest
+import com.iboi.rebanho.api.dto.toDto
 import com.iboi.rebanho.domain.TipoEvento
 import com.iboi.rebanho.repository.EventoRepository
 import com.iboi.rebanho.usecase.RegistrarEventoUseCase
@@ -80,12 +79,12 @@ class EventoController(
             else -> eventoRepository.findByFarmIdOrderByDataDesc(farmId)
         }
 
-        return ResponseEntity.ok(eventos.map { toDto(it) })
+        return ResponseEntity.ok(eventos.map { it.toDto() })
     }
 
     @GetMapping("/animal/{animalId}")
     fun listarPorAnimal(@PathVariable animalId: UUID): ResponseEntity<List<EventoDto>> {
-        return ResponseEntity.ok(eventoRepository.findByAnimalIdOrderByDataDesc(animalId).map { toDto(it) })
+        return ResponseEntity.ok(eventoRepository.findByAnimalIdOrderByDataDesc(animalId).map { it.toDto() })
     }
 
     @GetMapping("/{id}")
@@ -97,27 +96,6 @@ class EventoController(
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build()
         }
 
-        return ResponseEntity.ok(toDto(evento))
-    }
-
-    private fun toDto(evento: com.iboi.rebanho.domain.Evento): EventoDto {
-        return EventoDto(
-                id = evento.id!!,
-                animal = AnimalResumoDto(
-                        id = evento.animal.id!!,
-                        brinco = evento.animal.brinco,
-                        nome = evento.animal.nome
-                ),
-                tipo = evento.tipo,
-                data = evento.data,
-                descricao = evento.descricao,
-                peso = evento.peso,
-                produto = evento.produto,
-                dose = evento.dose,
-                unidadeMedida = evento.unidadeMedida,
-                loteDestino = evento.loteDestino?.let { LoteResumoDto(it.id!!, it.nome) },
-                valor = evento.valor,
-                responsavel = evento.responsavel?.nome
-        )
+        return ResponseEntity.ok(evento.toDto())
     }
 }

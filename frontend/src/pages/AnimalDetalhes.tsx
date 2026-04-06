@@ -20,6 +20,7 @@ import api from '../services/api';
 import { getCurrentFarm, getFarms } from '../services/session';
 import type {
   AnimalDto,
+  AnimalFichaCompletaDto,
   AtualizarAnimalRequest,
   CategoriaAnimal,
   EventoDto,
@@ -250,10 +251,7 @@ export default function AnimalDetalhes() {
       setError('');
 
       const requests: Promise<any>[] = [
-        api.get(`/api/animais/${animalId}`),
-        api.get(`/api/eventos/animal/${animalId}`),
-        api.get(`/api/animais/${animalId}/vacinacoes`),
-        api.get(`/api/animais/${animalId}/movimentacoes`),
+        api.get<AnimalFichaCompletaDto>(`/api/animais/${animalId}/ficha-completa`),
         api.get('/api/lotes', { params: { apenasAtivos: true } }),
       ];
 
@@ -261,13 +259,14 @@ export default function AnimalDetalhes() {
         requests.push(api.get(`/api/farms/${currentFarm.id}/pastures`));
       }
 
-      const [animalRes, eventosRes, vacinacoesRes, movimentacoesRes, lotesRes, pasturesRes] = await Promise.all(requests);
-      const animalData = animalRes.data as AnimalDto;
+      const [animalRes, lotesRes, pasturesRes] = await Promise.all(requests);
+      const fichaCompleta = animalRes.data as AnimalFichaCompletaDto;
+      const animalData = fichaCompleta.animal;
 
       setAnimal(animalData);
-      setEventos(Array.isArray(eventosRes.data) ? eventosRes.data : eventosRes.data.content || []);
-      setVacinacoes(Array.isArray(vacinacoesRes.data) ? vacinacoesRes.data : []);
-      setMovimentacoes(Array.isArray(movimentacoesRes.data) ? movimentacoesRes.data : []);
+      setEventos(Array.isArray(fichaCompleta.eventos) ? fichaCompleta.eventos : []);
+      setVacinacoes(Array.isArray(fichaCompleta.vacinacoes) ? fichaCompleta.vacinacoes : []);
+      setMovimentacoes(Array.isArray(fichaCompleta.movimentacoes) ? fichaCompleta.movimentacoes : []);
       setLotes(Array.isArray(lotesRes.data) ? lotesRes.data : lotesRes.data.content || []);
       setPastures(pasturesRes?.data ?? []);
       setInlineForm({

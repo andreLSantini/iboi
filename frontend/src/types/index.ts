@@ -471,6 +471,13 @@ export interface EventoDto {
   responsavel?: string;
 }
 
+export interface AnimalFichaCompletaDto {
+  animal: AnimalDto;
+  eventos: EventoDto[];
+  vacinacoes: VacinacaoAnimalDto[];
+  movimentacoes: MovimentacaoAnimalDto[];
+}
+
 export interface RegistrarEventoRequest {
   animalId: string;
   tipo: TipoEvento;
