@@ -1,10 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../core/api/api_client.dart';
+
 import '../../core/auth/auth_service.dart';
+import '../../core/data/app_repository.dart';
+import '../../core/models/app_session.dart';
 import '../animais/animais_list_screen.dart';
-import '../eventos/registro_rapido_screen.dart';
 import '../auth/login_screen.dart';
+import '../eventos/eventos_page.dart';
+import 'dashboard_summary_page.dart';
+
+enum AppMenu {
+  dashboard,
+  fazendas,
+  animais,
+  lotes,
+  eventos,
+  calendario,
+  despesas,
+  relatorios,
+  alertas,
+  veterinarios,
+  assinatura,
+  configuracoes,
+}
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -14,290 +32,423 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  Map<String, dynamic>? _stats;
-  bool _isLoading = true;
+  AppMenu _selectedMenu = AppMenu.dashboard;
 
   @override
   void initState() {
     super.initState();
-    _loadDashboardData();
-  }
-
-  Future<void> _loadDashboardData() async {
-    try {
-      final apiClient = context.read<ApiClient>();
-      final response = await apiClient.get('/api/animais');
-
-      final animais = response.data is List
-          ? response.data
-          : (response.data['content'] ?? []);
-
-      final totalAnimais = animais.length;
-      final animaisAtivos =
-          animais.where((a) => a['status'] == 'ATIVO').length;
-
-      setState(() {
-        _stats = {
-          'totalAnimais': totalAnimais,
-          'animaisAtivos': animaisAtivos,
-          'eventosHoje': 0,
-        };
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AppRepository>().refreshConnectivity();
+    });
   }
 
   Future<void> _handleLogout() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Sair'),
-        content: const Text('Tem certeza que deseja sair?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Sair'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true) {
-      await context.read<AuthService>().logout();
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const LoginScreen()),
-        );
-      }
+    await context.read<AuthService>().logout();
+    if (!mounted) {
+      return;
     }
+
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      (route) => false,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthService>();
+    final session = auth.session;
+    final mode = auth.mode;
+    final title = _menuMeta(_selectedMenu).label;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('BovCore'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: _handleLogout,
-          ),
-        ],
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _loadDashboardData,
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Saudação
-                    Text(
-                      'Bem-vindo! 👋',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Aqui está um resumo da sua fazenda',
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: const Color(0xFF6B7280),
-                          ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Cards de Estatísticas
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _StatCard(
-                            title: 'Total de Animais',
-                            value: '${_stats?['totalAnimais'] ?? 0}',
-                            icon: Icons.pets,
-                            color: const Color(0xFF22C55E),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _StatCard(
-                            title: 'Ativos',
-                            value: '${_stats?['animaisAtivos'] ?? 0}',
-                            icon: Icons.check_circle,
-                            color: const Color(0xFF3B82F6),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Ações Rápidas
-                    Text(
-                      'Ações Rápidas',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    _ActionButton(
-                      icon: Icons.qr_code_scanner,
-                      title: 'Escanear QR Code',
-                      subtitle: 'Registrar evento via QR',
-                      color: const Color(0xFF8B5CF6),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const RegistroRapidoScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 12),
-
-                    _ActionButton(
-                      icon: Icons.list_alt,
-                      title: 'Lista de Animais',
-                      subtitle: 'Ver todos os animais cadastrados',
-                      color: const Color(0xFF22C55E),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const AnimaisListScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ),
-    );
-  }
-}
-
-class _StatCard extends StatelessWidget {
-  final String title;
-  final String value;
-  final IconData icon;
-  final Color color;
-
-  const _StatCard({
-    required this.title,
-    required this.value,
-    required this.icon,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        titleSpacing: 8,
+        title: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(8),
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
+                color: const Color(0xFFDCFCE7),
+                borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: color, size: 24),
+              child: const Icon(
+                Icons.agriculture,
+                color: Color(0xFF166534),
+              ),
             ),
-            const SizedBox(height: 12),
-            Text(
-              value,
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'BovCore',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
                   ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              title,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: const Color(0xFF6B7280),
+                  const Text(
+                    'Painel operacional do SaaS',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF6B7280),
+                    ),
                   ),
+                ],
+              ),
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _ActionButton extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _ActionButton({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  color: mode == SessionMode.online
+                      ? const Color(0xFFECFDF5)
+                      : const Color(0xFFFFFBEB),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(
+                    color: mode == SessionMode.online
+                        ? const Color(0xFFBBF7D0)
+                        : const Color(0xFFFDE68A),
+                  ),
                 ),
-                child: Icon(icon, color: color, size: 28),
+                child: Text(
+                  mode == SessionMode.online ? 'Producao online' : 'Modo offline',
+                  style: TextStyle(
+                    color: mode == SessionMode.online
+                        ? const Color(0xFF166534)
+                        : const Color(0xFF92400E),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
-              const SizedBox(width: 16),
+            ),
+          ),
+        ],
+      ),
+      drawer: Drawer(
+        child: SafeArea(
+          child: Column(
+            children: [
+              _DrawerHeader(
+                session: session,
+                mode: mode,
+              ),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
+                child: ListView(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  children: AppMenu.values.map((item) {
+                    final meta = _menuMeta(item);
+                    final selected = _selectedMenu == item;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: ListTile(
+                        leading: Icon(
+                          meta.icon,
+                          color: selected
+                              ? const Color(0xFF16A34A)
+                              : const Color(0xFF9CA3AF),
+                        ),
+                        title: Text(
+                          meta.label,
+                          style: TextStyle(
+                            fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                            color: selected
+                                ? const Color(0xFF166534)
+                                : const Color(0xFF374151),
                           ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: const Color(0xFF6B7280),
-                          ),
-                    ),
-                  ],
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        tileColor:
+                            selected ? const Color(0xFFF0FDF4) : Colors.transparent,
+                        onTap: () {
+                          setState(() {
+                            _selectedMenu = item;
+                          });
+                          Navigator.pop(context);
+                        },
+                      ),
+                    );
+                  }).toList(),
                 ),
               ),
-              const Icon(Icons.chevron_right, color: Color(0xFF9CA3AF)),
+              const Divider(height: 1),
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: ListTile(
+                  leading: const Icon(Icons.logout_rounded),
+                  title: const Text('Sair'),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  onTap: _handleLogout,
+                ),
+              ),
             ],
           ),
         ),
       ),
+      body: Column(
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF111827),
+                      ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${auth.farmName} - ${auth.farmRole}',
+                  style: const TextStyle(
+                    color: Color(0xFF6B7280),
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          Expanded(child: _buildPage()),
+        ],
+      ),
     );
   }
+
+  Widget _buildPage() {
+    switch (_selectedMenu) {
+      case AppMenu.dashboard:
+        return DashboardSummaryPage(
+          onOpenAnimals: () => setState(() => _selectedMenu = AppMenu.animais),
+          onOpenEvents: () => setState(() => _selectedMenu = AppMenu.eventos),
+        );
+      case AppMenu.animais:
+        return const AnimaisListScreen();
+      case AppMenu.eventos:
+        return const EventosPage();
+      case AppMenu.fazendas:
+        return const _PlaceholderPage(
+          icon: Icons.business_rounded,
+          title: 'Gestao de Fazendas',
+          description:
+              'Estrutura do menu alinhada com o frontend. Esta area pode receber o fluxo completo da web em seguida.',
+        );
+      case AppMenu.lotes:
+        return const _PlaceholderPage(
+          icon: Icons.inventory_2_rounded,
+          title: 'Lotes',
+          description: 'Menu igual ao front pronto para receber a tela mobile de lotes.',
+        );
+      case AppMenu.calendario:
+        return const _PlaceholderPage(
+          icon: Icons.calendar_month_rounded,
+          title: 'Calendario',
+          description: 'Calendario operacional alinhado ao menu principal do SaaS.',
+        );
+      case AppMenu.despesas:
+        return const _PlaceholderPage(
+          icon: Icons.attach_money_rounded,
+          title: 'Despesas',
+          description: 'Espaco reservado para o modulo financeiro do frontend.',
+        );
+      case AppMenu.relatorios:
+        return const _PlaceholderPage(
+          icon: Icons.bar_chart_rounded,
+          title: 'Relatorios',
+          description: 'Mesma navegacao do front, com area preparada para relatorios.',
+        );
+      case AppMenu.alertas:
+        return const _PlaceholderPage(
+          icon: Icons.warning_amber_rounded,
+          title: 'Alertas e IA',
+          description: 'Painel para alertas inteligentes e recomendacoes de IA.',
+        );
+      case AppMenu.veterinarios:
+        return const _PlaceholderPage(
+          icon: Icons.groups_rounded,
+          title: 'Veterinarios',
+          description: 'Espaco pronto para compartilhamento com equipe veterinaria.',
+        );
+      case AppMenu.assinatura:
+        return const _PlaceholderPage(
+          icon: Icons.credit_card_rounded,
+          title: 'Assinatura',
+          description: 'Area preparada para status do plano e cobrancas.',
+        );
+      case AppMenu.configuracoes:
+        return const _PlaceholderPage(
+          icon: Icons.settings_rounded,
+          title: 'Configuracoes',
+          description: 'Preferencias e parametros do app mobile.',
+        );
+    }
+  }
+
+  _MenuMeta _menuMeta(AppMenu item) {
+    switch (item) {
+      case AppMenu.dashboard:
+        return const _MenuMeta('Dashboard', Icons.home_rounded);
+      case AppMenu.fazendas:
+        return const _MenuMeta('Gestao de Fazendas', Icons.business_rounded);
+      case AppMenu.animais:
+        return const _MenuMeta('Animais', Icons.pets_rounded);
+      case AppMenu.lotes:
+        return const _MenuMeta('Lotes', Icons.inventory_2_rounded);
+      case AppMenu.eventos:
+        return const _MenuMeta('Eventos', Icons.bolt_rounded);
+      case AppMenu.calendario:
+        return const _MenuMeta('Calendario', Icons.calendar_month_rounded);
+      case AppMenu.despesas:
+        return const _MenuMeta('Despesas', Icons.attach_money_rounded);
+      case AppMenu.relatorios:
+        return const _MenuMeta('Relatorios', Icons.bar_chart_rounded);
+      case AppMenu.alertas:
+        return const _MenuMeta('Alertas e IA', Icons.warning_amber_rounded);
+      case AppMenu.veterinarios:
+        return const _MenuMeta('Veterinarios', Icons.groups_rounded);
+      case AppMenu.assinatura:
+        return const _MenuMeta('Assinatura', Icons.credit_card_rounded);
+      case AppMenu.configuracoes:
+        return const _MenuMeta('Configuracoes', Icons.settings_rounded);
+    }
+  }
+}
+
+class _DrawerHeader extends StatelessWidget {
+  const _DrawerHeader({
+    required this.session,
+    required this.mode,
+  });
+
+  final AppSession? session;
+  final SessionMode mode;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+      decoration: const BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: Color(0xFFE5E7EB)),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const CircleAvatar(
+            radius: 28,
+            backgroundColor: Color(0xFFDCFCE7),
+            child: Icon(Icons.agriculture, color: Color(0xFF166534)),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            session?.userName ?? 'Conta',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            session?.email ?? '',
+            style: const TextStyle(color: Color(0xFF6B7280)),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            session?.farmName ?? 'Fazenda',
+            style: const TextStyle(
+              color: Color(0xFF111827),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            mode == SessionMode.online ? 'Conectado em producao' : 'Usando cache offline',
+            style: TextStyle(
+              color: mode == SessionMode.online
+                  ? const Color(0xFF166534)
+                  : const Color(0xFF92400E),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PlaceholderPage extends StatelessWidget {
+  const _PlaceholderPage({
+    required this.icon,
+    required this.title,
+    required this.description,
+  });
+
+  final IconData icon;
+  final String title;
+  final String description;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(20),
+      children: [
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF0FDF4),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Icon(icon, color: const Color(0xFF16A34A), size: 30),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  description,
+                  style: const TextStyle(
+                    color: Color(0xFF6B7280),
+                    height: 1.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _MenuMeta {
+  const _MenuMeta(this.label, this.icon);
+
+  final String label;
+  final IconData icon;
 }

@@ -17,14 +17,11 @@ dependencies:
   # State Management
   provider: ^6.1.1
 
-  # Network
-  http: ^1.1.2
-  dio: ^5.4.0
-
   # Local Storage
   shared_preferences: ^2.2.2
   sqflite: ^2.3.0
   path_provider: ^2.1.1
+  http: ^1.2.2
 
   # QR Code Scanner
   mobile_scanner: ^3.5.5
@@ -34,9 +31,6 @@ dependencies:
   intl: ^0.18.1
   uuid: ^4.2.2
 
-  # JWT
-  jwt_decode: ^0.3.1
-
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -45,6 +39,8 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/logo_transparente.png
 
 flutter_launcher_icons:
   android: true

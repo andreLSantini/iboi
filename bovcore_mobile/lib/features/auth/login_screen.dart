@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../core/api/api_client.dart';
-import '../../core/auth/auth_service.dart';
+
+import '../../core/data/app_repository.dart';
+import '../../core/services/remote_api_service.dart';
 import '../dashboard/dashboard_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -18,6 +19,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
   bool _obscurePassword = true;
   String? _errorMessage;
+  String? _helperMessage;
 
   @override
   void dispose() {
@@ -27,33 +29,43 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _handleLogin() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
 
     setState(() {
       _isLoading = true;
       _errorMessage = null;
+      _helperMessage = null;
     });
 
     try {
-      final authService = context.read<AuthService>();
-      final apiClient = context.read<ApiClient>();
+      final repository = context.read<AppRepository>();
+      final usedOnline = await repository.login(
+        email: _emailController.text,
+        password: _passwordController.text,
+      );
 
-      final response = await apiClient.post('/auth/login', data: {
-        'email': _emailController.text.trim(),
-        'password': _passwordController.text,
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _helperMessage = usedOnline
+            ? 'Conectado no ambiente de producao.'
+            : 'Sem internet detectada. Entrando no modo offline local.';
       });
 
-      final token = response.data['token'];
-      await authService.saveToken(token);
-
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const DashboardScreen()),
-        );
-      }
-    } catch (e) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const DashboardScreen()),
+      );
+    } on RemoteApiException catch (error) {
       setState(() {
-        _errorMessage = 'Email ou senha incorretos';
+        _errorMessage = error.message;
+      });
+    } catch (_) {
+      setState(() {
+        _errorMessage = 'Nao foi possivel entrar agora.';
       });
     } finally {
       if (mounted) {
@@ -67,154 +79,238 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Logo
-                  const Icon(
-                    Icons.agriculture,
-                    size: 80,
-                    color: Color(0xFF22C55E),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Título
-                  Text(
-                    'BovCore',
-                    style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: const Color(0xFF1F2937),
-                        ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Sistema de Gestão de Gado',
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: const Color(0xFF6B7280),
-                        ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 48),
-
-                  // Email
-                  TextFormField(
-                    controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
-                      prefixIcon: Icon(Icons.email_outlined),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Digite seu email';
-                      }
-                      if (!value.contains('@')) {
-                        return 'Digite um email válido';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Senha
-                  TextFormField(
-                    controller: _passwordController,
-                    obscureText: _obscurePassword,
-                    decoration: InputDecoration(
-                      labelText: 'Senha',
-                      prefixIcon: const Icon(Icons.lock_outlined),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscurePassword
-                              ? Icons.visibility_outlined
-                              : Icons.visibility_off_outlined,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _obscurePassword = !_obscurePassword;
-                          });
-                        },
-                      ),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Digite sua senha';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Erro
-                  if (_errorMessage != null)
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      margin: const EdgeInsets.only(bottom: 16),
-                      decoration: BoxDecoration(
-                        color: Colors.red.shade50,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.red.shade200),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.error_outline, color: Colors.red.shade700),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              _errorMessage!,
-                              style: TextStyle(color: Colors.red.shade700),
-                            ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFFF0FDF4),
+              Color(0xFFDCFCE7),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Column(
+                      children: [
+                        SizedBox(
+                          height: 112,
+                          child: Image.asset(
+                            'assets/logo_transparente.png',
+                            fit: BoxFit.contain,
                           ),
-                        ],
+                        ),
+                        const SizedBox(height: 28),
+                        Text(
+                          'Gestao inteligente de gado',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                color: const Color(0xFF334155),
+                                fontWeight: FontWeight.w400,
+                              ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 34),
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Text(
+                                'Entrar',
+                                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: const Color(0xFF111827),
+                                    ),
+                              ),
+                              const SizedBox(height: 24),
+                              TextFormField(
+                                controller: _emailController,
+                                keyboardType: TextInputType.emailAddress,
+                                decoration: const InputDecoration(
+                                  labelText: 'E-mail',
+                                  hintText: 'seu@email.com',
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Digite seu email';
+                                  }
+                                  if (!value.contains('@')) {
+                                    return 'Digite um email valido';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 16),
+                              TextFormField(
+                                controller: _passwordController,
+                                obscureText: _obscurePassword,
+                                decoration: InputDecoration(
+                                  labelText: 'Senha',
+                                  hintText: '********',
+                                  suffixIcon: IconButton(
+                                    icon: Icon(
+                                      _obscurePassword
+                                          ? Icons.visibility_outlined
+                                          : Icons.visibility_off_outlined,
+                                    ),
+                                    onPressed: () {
+                                      setState(() {
+                                        _obscurePassword = !_obscurePassword;
+                                      });
+                                    },
+                                  ),
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Digite sua senha';
+                                  }
+                                  return null;
+                                },
+                                ),
+                              const SizedBox(height: 18),
+                              if (_errorMessage != null)
+                                _MessageBox(
+                                  message: _errorMessage!,
+                                  icon: Icons.error_outline,
+                                  background: Colors.red.shade50,
+                                  border: Colors.red.shade200,
+                                  foreground: Colors.red.shade700,
+                                ),
+                              if (_helperMessage != null)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 12),
+                                  child: _MessageBox(
+                                    message: _helperMessage!,
+                                    icon: Icons.info_outline,
+                                    background: const Color(0xFFECFDF5),
+                                    border: const Color(0xFFBBF7D0),
+                                    foreground: const Color(0xFF166534),
+                                  ),
+                                ),
+                              const SizedBox(height: 18),
+                              SizedBox(
+                                height: 56,
+                                child: ElevatedButton(
+                                  onPressed: _isLoading ? null : _handleLogin,
+                                  child: _isLoading
+                                      ? const SizedBox(
+                                          height: 20,
+                                          width: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor:
+                                                AlwaysStoppedAnimation(Colors.white),
+                                          ),
+                                        )
+                                      : const Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Icon(Icons.login_rounded),
+                                            SizedBox(width: 10),
+                                            Text(
+                                              'Entrar',
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                              RichText(
+                                textAlign: TextAlign.center,
+                                text: const TextSpan(
+                                  style: TextStyle(
+                                    color: Color(0xFF374151),
+                                    fontSize: 14,
+                                  ),
+                                  children: [
+                                    TextSpan(text: 'Nao tem uma conta? '),
+                                    TextSpan(
+                                      text: 'Cadastre-se gratis',
+                                      style: TextStyle(
+                                        color: Color(0xFF16A34A),
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              const Text(
+                                '30 dias de trial gratuito.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Color(0xFF6B7280),
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
-
-                  // Botão de Login
-                  SizedBox(
-                    height: 56,
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : _handleLogin,
-                      child: _isLoading
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation(Colors.white),
-                              ),
-                            )
-                          : const Text(
-                              'Entrar',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Versão
-                  Text(
-                    'v1.0.0',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: const Color(0xFF9CA3AF),
-                        ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _MessageBox extends StatelessWidget {
+  const _MessageBox({
+    required this.message,
+    required this.icon,
+    required this.background,
+    required this.border,
+    required this.foreground,
+  });
+
+  final String message;
+  final IconData icon;
+  final Color background;
+  final Color border;
+  final Color foreground;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: border),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: foreground),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(color: foreground),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -1,61 +1,120 @@
+import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:jwt_decode/jwt_decode.dart';
 
-class AuthService {
-  static const String _tokenKey = 'auth_token';
-  static const String _userKey = 'user_data';
+import '../models/app_session.dart';
 
-  Future<void> saveToken(String token) async {
+class AuthService extends ChangeNotifier {
+  static const String _sessionKey = 'app_session_v2';
+
+  AppSession? _session;
+
+  AppSession? get session => _session;
+
+  bool get isLoggedIn => _session != null;
+
+  String get displayName => _session?.userName ?? 'Conta';
+
+  String get farmName => _session?.farmName ?? 'Fazenda';
+
+  String get farmRole => _session?.farmRole ?? 'Admin';
+
+  String? get token => _session?.token;
+
+  bool get hasRemoteSession => (_session?.hasRemoteToken ?? false);
+
+  SessionMode get mode => _session?.mode ?? SessionMode.offline;
+
+  Future<void> restoreSession() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_tokenKey, token);
-  }
-
-  Future<String?> getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_tokenKey);
-  }
-
-  Future<void> saveUserData(Map<String, dynamic> userData) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_userKey, userData.toString());
-  }
-
-  Future<bool> isAuthenticated() async {
-    final token = await getToken();
-    if (token == null) return false;
+    final raw = prefs.getString(_sessionKey);
+    if (raw == null) {
+      _session = null;
+      return;
+    }
 
     try {
-      // Verifica se o token está expirado
-      return !Jwt.isExpired(token);
-    } catch (e) {
-      return false;
+      _session = AppSession.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+    } catch (_) {
+      _session = null;
     }
   }
 
-  Future<Map<String, dynamic>?> getTokenClaims() async {
-    final token = await getToken();
-    if (token == null) return null;
+  Future<void> saveOnlineSession(Map<String, dynamic> response) async {
+    _session = AppSession.fromLoginResponse(response);
+    await _persist();
+    notifyListeners();
+  }
 
-    try {
-      return Jwt.parseJwt(token);
-    } catch (e) {
-      return null;
+  Future<void> saveOfflineSession({
+    required String email,
+    required String password,
+  }) async {
+    final normalizedEmail = email.trim().toLowerCase();
+    if (normalizedEmail.isEmpty || password.isEmpty) {
+      throw Exception('Credenciais invalidas');
     }
+
+    _session = AppSession(
+      email: normalizedEmail,
+      userName: _buildDisplayName(normalizedEmail),
+      farmName: 'Fazenda Offline',
+      farmId: 'offline-farm',
+      mode: SessionMode.offline,
+      farmRole: 'Admin',
+    );
+    await _persist();
+    notifyListeners();
   }
 
-  Future<String?> getUserId() async {
-    final claims = await getTokenClaims();
-    return claims?['sub'];
-  }
+  Future<void> updateReachability(bool online) async {
+    if (_session == null || !_session!.hasRemoteToken) {
+      return;
+    }
 
-  Future<String?> getFarmId() async {
-    final claims = await getTokenClaims();
-    return claims?['tenantId'];
+    final newMode = online ? SessionMode.online : SessionMode.offline;
+    if (_session!.mode == newMode) {
+      return;
+    }
+
+    _session = _session!.copyWith(mode: newMode);
+    await _persist();
+    notifyListeners();
   }
 
   Future<void> logout() async {
+    _session = null;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_tokenKey);
-    await prefs.remove(_userKey);
+    await prefs.remove(_sessionKey);
+    notifyListeners();
+  }
+
+  Future<void> _persist() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (_session == null) {
+      await prefs.remove(_sessionKey);
+      return;
+    }
+
+    await prefs.setString(_sessionKey, jsonEncode(_session!.toJson()));
+  }
+
+  String _buildDisplayName(String email) {
+    final localPart = email.split('@').first.trim();
+    if (localPart.isEmpty) {
+      return 'Operador Offline';
+    }
+
+    final segments = localPart
+        .split(RegExp(r'[._-]+'))
+        .where((segment) => segment.isNotEmpty)
+        .map(
+          (segment) =>
+              '${segment[0].toUpperCase()}${segment.substring(1).toLowerCase()}',
+        )
+        .toList();
+
+    return segments.isEmpty ? 'Operador Offline' : segments.join(' ');
   }
 }
