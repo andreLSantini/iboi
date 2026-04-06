@@ -5,11 +5,13 @@ import com.iboi.identity.api.dto.request.CadastrarFazendaRequest
 import com.iboi.identity.api.dto.request.CadastrarPastoRequest
 import com.iboi.identity.api.dto.request.SelecionarFazendaRequest
 import com.iboi.identity.api.dto.response.FarmDetailDto
+import com.iboi.identity.api.dto.response.MultiFarmPortfolioDto
 import com.iboi.identity.api.dto.response.FarmSummaryDto
 import com.iboi.identity.api.dto.response.LoginResponse
 import com.iboi.identity.api.dto.response.PastureDto
 import com.iboi.identity.application.usecase.BuildAuthResponseUseCase
 import com.iboi.identity.application.usecase.CadastrarFazendaUseCase
+import com.iboi.identity.application.usecase.ConstruirPortfolioMultiFazendaUseCase
 import com.iboi.identity.domain.Farm
 import com.iboi.identity.domain.Pasture
 import com.iboi.identity.infrastructure.repository.FarmRepository
@@ -33,6 +35,7 @@ class FarmController(
         private val userFarmProfileRepository: UserFarmProfileRepository,
         private val buildAuthResponseUseCase: BuildAuthResponseUseCase,
         private val cadastrarFazendaUseCase: CadastrarFazendaUseCase,
+        private val construirPortfolioMultiFazendaUseCase: ConstruirPortfolioMultiFazendaUseCase,
         private val farmRepository: FarmRepository,
         private val pastureRepository: PastureRepository
 ) {
@@ -55,6 +58,16 @@ class FarmController(
                 }
 
         return ResponseEntity.ok(farms)
+    }
+
+    @GetMapping("/portfolio")
+    fun portfolio(): ResponseEntity<MultiFarmPortfolioDto> {
+        return ResponseEntity.ok(
+                construirPortfolioMultiFazendaUseCase.execute(
+                        userId = SecurityUtils.currentUserId(),
+                        empresaId = SecurityUtils.currentEmpresaId()
+                )
+        )
     }
 
     @GetMapping("/{farmId}")

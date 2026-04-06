@@ -7,11 +7,14 @@ import AnimalQuickViewModal from '../components/AnimalQuickViewModal';
 import api from '../services/api';
 import { getCurrentFarm, getFarms, storeAuthSession, storeCurrentFarm, storeFarms } from '../services/session';
 import type {
+  AreaOperacional,
   AnimalDto,
   AtualizarFazendaRequest,
   CadastrarFazendaRequest,
   CadastrarPastoRequest,
   FarmDetail,
+  FarmOperacional,
+  MultiFarmPortfolio,
   FarmSummary,
   LoginResponse,
   Pasture,
@@ -128,6 +131,7 @@ function MiniMap({
 
 export default function GestaoFazendas() {
   const [farms, setFarms] = useState<FarmSummary[]>(() => getFarms());
+  const [portfolio, setPortfolio] = useState<MultiFarmPortfolio | null>(null);
   const [pastures, setPastures] = useState<Pasture[]>([]);
   const [farmAnimals, setFarmAnimals] = useState<AnimalDto[]>([]);
   const [saving, setSaving] = useState(false);
@@ -182,14 +186,30 @@ export default function GestaoFazendas() {
     }, {});
   }, [farmAnimals]);
 
+  const fazendaOperacionalSelecionada = useMemo<FarmOperacional | null>(() => {
+    if (!selectedFarmId || !portfolio) return null;
+    return portfolio.fazendas.find((farm) => farm.id === selectedFarmId) ?? null;
+  }, [portfolio, selectedFarmId]);
+
+  const topAreasOperacionais = useMemo<AreaOperacional[]>(() => {
+    return (fazendaOperacionalSelecionada?.areasOperacionais ?? [])
+      .slice()
+      .sort((a, b) => b.animaisAtivos - a.animaisAtivos)
+      .slice(0, 4);
+  }, [fazendaOperacionalSelecionada]);
+
   async function carregarFazendas() {
     try {
-      const response = await api.get<FarmSummary[]>('/api/farms');
-      setFarms(response.data);
-      storeFarms(response.data);
+      const [farmsResponse, portfolioResponse] = await Promise.all([
+        api.get<FarmSummary[]>('/api/farms'),
+        api.get<MultiFarmPortfolio>('/api/farms/portfolio'),
+      ]);
+      setFarms(farmsResponse.data);
+      setPortfolio(portfolioResponse.data);
+      storeFarms(farmsResponse.data);
 
-      if (!selectedFarmId && response.data.length > 0) {
-        setSelectedFarmId(currentFarm?.id ?? response.data[0].id);
+      if (!selectedFarmId && farmsResponse.data.length > 0) {
+        setSelectedFarmId(currentFarm?.id ?? farmsResponse.data[0].id);
       }
     } catch (error) {
       console.error('Erro ao carregar fazendas', error);
@@ -432,20 +452,46 @@ export default function GestaoFazendas() {
 
       <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
         <div className="card">
+          {portfolio && (
+            <div className="mb-5 grid gap-4 md:grid-cols-4">
+              <div className="rounded-2xl bg-slate-50 p-4">
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Fazendas ativas</p>
+                <p className="mt-2 text-2xl font-bold text-slate-900">
+                  {portfolio.resumo.fazendasAtivas}/{portfolio.resumo.totalFazendas}
+                </p>
+              </div>
+              <div className="rounded-2xl bg-slate-50 p-4">
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Animais ativos</p>
+                <p className="mt-2 text-2xl font-bold text-slate-900">{portfolio.resumo.totalAnimaisAtivos}</p>
+              </div>
+              <div className="rounded-2xl bg-slate-50 p-4">
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Lotes e pastos</p>
+                <p className="mt-2 text-2xl font-bold text-slate-900">
+                  {portfolio.resumo.totalLotesAtivos} / {portfolio.resumo.totalPastos}
+                </p>
+              </div>
+              <div className="rounded-2xl bg-slate-50 p-4">
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Area produtiva</p>
+                <p className="mt-2 text-2xl font-bold text-slate-900">{portfolio.resumo.areaProdutivaHa.toFixed(1)} ha</p>
+              </div>
+            </div>
+          )}
+
           <div className="flex items-center gap-3">
             <Tractor className="h-6 w-6 text-primary-600" />
             <div>
               <h2 className="text-lg font-bold text-slate-900">Fazendas da conta</h2>
-              <p className="text-sm text-slate-600">Listagem principal com acoes objetivas por fazenda.</p>
+              <p className="text-sm text-slate-600">Listagem principal com acoes objetivas e leitura operacional por fazenda.</p>
             </div>
           </div>
 
           <div className="mt-5 overflow-hidden rounded-2xl border border-slate-200">
-            <div className="hidden grid-cols-[1.4fr_1fr_0.8fr_0.8fr_1.2fr] gap-4 bg-slate-100 px-4 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 md:grid">
+            <div className="hidden grid-cols-[1.2fr_0.9fr_0.75fr_0.75fr_0.95fr_1.2fr] gap-4 bg-slate-100 px-4 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 md:grid">
               <span>Fazenda</span>
               <span>Local</span>
               <span>Producao</span>
               <span>Pastos</span>
+              <span>Rebanho</span>
               <span>Acoes</span>
             </div>
 
@@ -454,7 +500,7 @@ export default function GestaoFazendas() {
                 <div className="px-4 py-8 text-sm text-slate-600">Nenhuma fazenda encontrada.</div>
               ) : (
                 farms.map((farm) => (
-                  <div key={farm.id} className="grid gap-4 px-4 py-4 md:grid-cols-[1.4fr_1fr_0.8fr_0.8fr_1.2fr] md:items-center">
+                  <div key={farm.id} className="grid gap-4 px-4 py-4 md:grid-cols-[1.2fr_0.9fr_0.75fr_0.75fr_0.95fr_1.2fr] md:items-center">
                     <div>
                       <p className="font-semibold text-slate-900">{farm.name}</p>
                       <p className="mt-1 text-xs text-slate-500">
@@ -472,6 +518,12 @@ export default function GestaoFazendas() {
                     </p>
                     <p className="text-sm text-slate-600">{farm.productionType ?? 'N/A'}</p>
                     <p className="text-sm text-slate-600">{farm.pastureCount ?? 0}</p>
+                    <div className="text-sm text-slate-600">
+                      <p>{portfolio?.fazendas.find((item) => item.id === farm.id)?.animaisAtivos ?? 0} ativos</p>
+                      <p className="text-xs text-slate-500">
+                        {portfolio?.fazendas.find((item) => item.id === farm.id)?.lotesAtivos ?? 0} lotes
+                      </p>
+                    </div>
                     <div className="flex flex-wrap gap-2">
                       <button onClick={() => void openEditModal(farm.id)} className="btn-secondary">
                         <Edit3 className="h-4 w-4" />
@@ -500,7 +552,7 @@ export default function GestaoFazendas() {
               <MapPinned className="h-6 w-6 text-primary-600" />
               <div>
                 <h2 className="text-lg font-bold text-slate-900">Contexto atual</h2>
-                <p className="text-sm text-slate-600">Resumo da fazenda ativa para orientar a operacao no app.</p>
+                <p className="text-sm text-slate-600">Resumo da fazenda selecionada com base de areas operacionais.</p>
               </div>
             </div>
 
@@ -510,6 +562,22 @@ export default function GestaoFazendas() {
               <p className="mt-1 text-sm text-slate-600">
                 {currentFarm ? `${currentFarm.cidade}, ${currentFarm.estado}` : 'Selecione uma fazenda para operar.'}
               </p>
+              {fazendaOperacionalSelecionada && (
+                <div className="mt-4 grid grid-cols-2 gap-3">
+                  <div className="rounded-2xl bg-white p-3">
+                    <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Rebanho ativo</p>
+                    <p className="mt-2 text-lg font-bold text-slate-900">{fazendaOperacionalSelecionada.animaisAtivos}</p>
+                  </div>
+                  <div className="rounded-2xl bg-white p-3">
+                    <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Ocupacao estimada</p>
+                    <p className="mt-2 text-lg font-bold text-slate-900">
+                      {fazendaOperacionalSelecionada.taxaOcupacaoEstimada != null
+                        ? `${fazendaOperacionalSelecionada.taxaOcupacaoEstimada.toFixed(1)}%`
+                        : 'N/A'}
+                    </p>
+                  </div>
+                </div>
+              )}
               <div className="mt-4">
                 <MiniMap
                   latitude={farmDetail?.latitude}
@@ -526,11 +594,31 @@ export default function GestaoFazendas() {
               <Sprout className="h-6 w-6 text-primary-600" />
               <div>
                 <h2 className="text-lg font-bold text-slate-900">Pastos da fazenda selecionada</h2>
-                <p className="text-sm text-slate-600">Visualizacao rapida com mini mapa para cada pasto.</p>
+                <p className="text-sm text-slate-600">Visualizacao rapida com mini mapa e leitura das areas operacionais.</p>
               </div>
             </div>
 
-              <div className="mt-4 space-y-3">
+            {topAreasOperacionais.length > 0 && (
+              <div className="mt-4 grid gap-3">
+                {topAreasOperacionais.map((area) => (
+                  <div key={area.id} className="rounded-2xl border border-slate-200 bg-white p-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="font-semibold text-slate-900">{area.nome}</p>
+                        <p className="mt-1 text-sm text-slate-600">
+                          {area.areaHa ? `${area.areaHa} ha` : 'Area nao informada'} • {area.animaisAtivos} animais ativos
+                        </p>
+                      </div>
+                      <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${area.ativa ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'}`}>
+                        {area.ativa ? 'Ativa' : 'Inativa'}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="mt-4 space-y-3">
               {selectedFarmId !== currentFarm?.id && pastures.length > 0 && (
                 <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                   Entre na fazenda para ver dinamicamente quantos bois existem em cada pasto e abrir a ficha rapida de cada um.

@@ -109,6 +109,49 @@ export interface Pasture {
   active: boolean;
 }
 
+export interface AreaOperacional {
+  id: string;
+  nome: string;
+  areaHa?: number;
+  ativa: boolean;
+  animaisAtivos: number;
+}
+
+export interface FarmOperacional {
+  id: string;
+  nome: string;
+  cidade?: string;
+  estado?: string;
+  tipoProducao: string;
+  ativa: boolean;
+  areaTotalHa?: number;
+  areaPastagemHa?: number;
+  areaProdutivaHa?: number;
+  capacidadeEstimada?: number;
+  animaisAtivos: number;
+  lotesAtivos: number;
+  totalPastos: number;
+  totalAreaPastosHa: number;
+  taxaOcupacaoEstimada?: number;
+  areasOperacionais: AreaOperacional[];
+}
+
+export interface MultiFarmResumo {
+  totalFazendas: number;
+  fazendasAtivas: number;
+  totalAnimaisAtivos: number;
+  totalLotesAtivos: number;
+  totalPastos: number;
+  areaTotalHa: number;
+  areaPastagemHa: number;
+  areaProdutivaHa: number;
+}
+
+export interface MultiFarmPortfolio {
+  resumo: MultiFarmResumo;
+  fazendas: FarmOperacional[];
+}
+
 export interface CadastrarPastoRequest {
   nome: string;
   areaHa?: number;
