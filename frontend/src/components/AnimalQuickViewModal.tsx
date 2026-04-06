@@ -2,7 +2,7 @@ import { Activity, Calendar, GitBranch, Loader2, MapPinned, ShieldPlus, Tag, Tre
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
-import type { AnimalDto, AnimalFichaCompletaDto, EventoDto, MovimentacaoAnimalDto, VacinacaoAnimalDto } from '../types';
+import type { AnimalDto, AnimalFichaCompletaDto, EventoDto, MovimentacaoAnimalDto, PesagemAnimalDto, VacinacaoAnimalDto } from '../types';
 
 type Props = {
   animalId: string | null;
@@ -22,6 +22,7 @@ function InfoBlock({ label, value }: { label: string; value: string }) {
 export default function AnimalQuickViewModal({ animalId, open, onClose }: Props) {
   const navigate = useNavigate();
   const [animal, setAnimal] = useState<AnimalDto | null>(null);
+  const [pesagens, setPesagens] = useState<PesagemAnimalDto[]>([]);
   const [eventos, setEventos] = useState<EventoDto[]>([]);
   const [vacinacoes, setVacinacoes] = useState<VacinacaoAnimalDto[]>([]);
   const [movimentacoes, setMovimentacoes] = useState<MovimentacaoAnimalDto[]>([]);
@@ -41,6 +42,7 @@ export default function AnimalQuickViewModal({ animalId, open, onClose }: Props)
         const fichaRes = await api.get<AnimalFichaCompletaDto>(`/api/animais/${animalId}/ficha-completa`);
 
         setAnimal(fichaRes.data.animal);
+        setPesagens(Array.isArray(fichaRes.data.pesagens) ? fichaRes.data.pesagens : []);
         setEventos(Array.isArray(fichaRes.data.eventos) ? fichaRes.data.eventos : []);
         setVacinacoes(Array.isArray(fichaRes.data.vacinacoes) ? fichaRes.data.vacinacoes : []);
         setMovimentacoes(Array.isArray(fichaRes.data.movimentacoes) ? fichaRes.data.movimentacoes : []);
@@ -58,20 +60,18 @@ export default function AnimalQuickViewModal({ animalId, open, onClose }: Props)
   const latestMovimentacao = movimentacoes[0];
 
   const gainInsight = useMemo(() => {
-    const pesagens = eventos
-      .filter((evento) => evento.tipo === 'PESAGEM' && evento.peso)
-      .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
+    const pesagensOrdenadas = [...pesagens].sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
 
-    if (pesagens.length < 2) {
+    if (pesagensOrdenadas.length < 2) {
       return 'Aguardando base de pesagem';
     }
 
-    const first = pesagens[0];
-    const last = pesagens[pesagens.length - 1];
+    const first = pesagensOrdenadas[0];
+    const last = pesagensOrdenadas[pesagensOrdenadas.length - 1];
     const diffDays = Math.max(1, Math.round((new Date(last.data).getTime() - new Date(first.data).getTime()) / (1000 * 60 * 60 * 24)));
     const diffWeight = Number(last.peso || 0) - Number(first.peso || 0);
     return `${(diffWeight / diffDays).toFixed(2)} kg/dia`;
-  }, [eventos]);
+  }, [pesagens]);
 
   if (!open) {
     return null;

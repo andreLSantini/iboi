@@ -473,9 +473,22 @@ export interface EventoDto {
 
 export interface AnimalFichaCompletaDto {
   animal: AnimalDto;
+  pesagens: PesagemAnimalDto[];
   eventos: EventoDto[];
   vacinacoes: VacinacaoAnimalDto[];
   movimentacoes: MovimentacaoAnimalDto[];
+}
+
+export interface PesagemAnimalDto {
+  id: string;
+  data: string;
+  peso: number;
+  unidade: string;
+  variacaoPeso?: number | null;
+  diasDesdeAnterior?: number | null;
+  ganhoMedioDiario?: number | null;
+  observacao?: string;
+  responsavel?: string;
 }
 
 export interface RegistrarEventoRequest {

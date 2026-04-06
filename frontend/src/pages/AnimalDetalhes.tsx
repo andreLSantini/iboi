@@ -29,6 +29,7 @@ import type {
   MovimentacaoAnimalDto,
   OrigemAnimal,
   Pasture,
+  PesagemAnimalDto,
   Raca,
   RegistrarMovimentacaoAnimalRequest,
   RegistrarVacinacaoAnimalRequest,
@@ -109,7 +110,7 @@ function QuickInsight({ title, description }: { title: string; description: stri
   );
 }
 
-function WeightCurve({ pesagens }: { pesagens: EventoDto[] }) {
+function WeightCurve({ pesagens }: { pesagens: PesagemAnimalDto[] }) {
   if (pesagens.length === 0) {
     return <p className="text-sm text-gray-500">Nenhuma pesagem registrada.</p>;
   }
@@ -184,6 +185,7 @@ export default function AnimalDetalhes() {
   const farms = getFarms();
 
   const [animal, setAnimal] = useState<AnimalDto | null>(null);
+  const [pesagens, setPesagens] = useState<PesagemAnimalDto[]>([]);
   const [eventos, setEventos] = useState<EventoDto[]>([]);
   const [vacinacoes, setVacinacoes] = useState<VacinacaoAnimalDto[]>([]);
   const [movimentacoes, setMovimentacoes] = useState<MovimentacaoAnimalDto[]>([]);
@@ -264,6 +266,7 @@ export default function AnimalDetalhes() {
       const animalData = fichaCompleta.animal;
 
       setAnimal(animalData);
+      setPesagens(Array.isArray(fichaCompleta.pesagens) ? fichaCompleta.pesagens : []);
       setEventos(Array.isArray(fichaCompleta.eventos) ? fichaCompleta.eventos : []);
       setVacinacoes(Array.isArray(fichaCompleta.vacinacoes) ? fichaCompleta.vacinacoes : []);
       setMovimentacoes(Array.isArray(fichaCompleta.movimentacoes) ? fichaCompleta.movimentacoes : []);
@@ -353,21 +356,18 @@ export default function AnimalDetalhes() {
     return timeline.filter((item) => item.category === timelineFilter);
   }, [timeline, timelineFilter]);
 
-  const pesagens = useMemo(
-    () =>
-      eventos
-        .filter((evento) => evento.tipo === 'PESAGEM' && evento.peso)
-        .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime()),
-    [eventos],
+  const pesagensOrdenadas = useMemo(
+    () => [...pesagens].sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime()),
+    [pesagens],
   );
 
   const ganhoPesoMedio = useMemo(() => {
-    if (pesagens.length < 2) return null;
-    const first = pesagens[0];
-    const last = pesagens[pesagens.length - 1];
+    if (pesagensOrdenadas.length < 2) return null;
+    const first = pesagensOrdenadas[0];
+    const last = pesagensOrdenadas[pesagensOrdenadas.length - 1];
     const diffDays = Math.max(1, Math.round((new Date(last.data).getTime() - new Date(first.data).getTime()) / (1000 * 60 * 60 * 24)));
     return ((Number(last.peso) - Number(first.peso)) / diffDays).toFixed(2);
-  }, [pesagens]);
+  }, [pesagensOrdenadas]);
 
   const quickInsights = useMemo(() => {
     if (!animal) return [];
@@ -391,13 +391,13 @@ export default function AnimalDetalhes() {
           : 'Registre a primeira vacinacao para dar contexto sanitario ao animal.',
       },
       {
-        title: pesagens.length > 1 ? 'Base produtiva disponivel' : 'Pouca base produtiva',
-        description: pesagens.length > 1
-          ? `Curva de peso com ${pesagens.length} pontos e GMD estimado em ${ganhoPesoMedio} kg/dia.`
+        title: pesagensOrdenadas.length > 1 ? 'Base produtiva disponivel' : 'Pouca base produtiva',
+        description: pesagensOrdenadas.length > 1
+          ? `Curva de peso com ${pesagensOrdenadas.length} pontos e GMD estimado em ${ganhoPesoMedio} kg/dia.`
           : 'Registre mais pesagens para liberar analises de ganho e desempenho.',
       },
     ];
-  }, [animal, vacinacoes.length, pesagens.length, ganhoPesoMedio]);
+  }, [animal, vacinacoes.length, pesagensOrdenadas.length, ganhoPesoMedio]);
 
   async function submitVaccination(e: React.FormEvent) {
     e.preventDefault();
@@ -638,7 +638,7 @@ export default function AnimalDetalhes() {
           icon={Weight}
           title="Peso atual"
           value={animal.pesoAtual ? `${animal.pesoAtual} kg` : 'Nao informado'}
-          subtitle={pesagens.length > 0 ? `${pesagens.length} pesagens registradas` : 'Sem historico ainda'}
+          subtitle={pesagensOrdenadas.length > 0 ? `${pesagensOrdenadas.length} pesagens registradas` : 'Sem historico ainda'}
           color="bg-blue-500"
         />
         <StatCard
@@ -880,7 +880,37 @@ export default function AnimalDetalhes() {
               <TrendingUp className="h-5 w-5 text-emerald-600" />
               <h2 className="text-xl font-bold text-gray-900">Curva de peso</h2>
             </div>
-            <WeightCurve pesagens={pesagens} />
+            <WeightCurve pesagens={pesagensOrdenadas} />
+            {pesagens.length > 0 && (
+              <div className="mt-6 overflow-hidden rounded-2xl border border-gray-100">
+                <table className="min-w-full divide-y divide-gray-100 text-sm">
+                  <thead className="bg-gray-50 text-left text-gray-600">
+                    <tr>
+                      <th className="px-4 py-3 font-medium">Data</th>
+                      <th className="px-4 py-3 font-medium">Peso</th>
+                      <th className="px-4 py-3 font-medium">Variacao</th>
+                      <th className="px-4 py-3 font-medium">Dias</th>
+                      <th className="px-4 py-3 font-medium">GMD</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 bg-white">
+                    {pesagens.map((pesagem) => (
+                      <tr key={pesagem.id}>
+                        <td className="px-4 py-3 text-gray-700">{new Date(pesagem.data).toLocaleDateString('pt-BR')}</td>
+                        <td className="px-4 py-3 font-medium text-gray-900">{pesagem.peso} kg</td>
+                        <td className="px-4 py-3 text-gray-700">
+                          {pesagem.variacaoPeso == null ? '-' : `${Number(pesagem.variacaoPeso).toFixed(2)} kg`}
+                        </td>
+                        <td className="px-4 py-3 text-gray-700">{pesagem.diasDesdeAnterior ?? '-'}</td>
+                        <td className="px-4 py-3 text-gray-700">
+                          {pesagem.ganhoMedioDiario == null ? '-' : `${Number(pesagem.ganhoMedioDiario).toFixed(3)} kg/dia`}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </section>
 
           <section className="card">

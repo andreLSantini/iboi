@@ -9,6 +9,7 @@ import com.iboi.rebanho.api.dto.CadastrarAnimalRequest
 import com.iboi.rebanho.api.dto.FiltrarAnimaisRequest
 import com.iboi.rebanho.api.dto.ImportarAnimaisResponse
 import com.iboi.rebanho.api.dto.MovimentacaoAnimalDto
+import com.iboi.rebanho.api.dto.PesagemAnimalDto
 import com.iboi.rebanho.api.dto.RegistrarMovimentacaoAnimalRequest
 import com.iboi.rebanho.api.dto.RegistrarVacinacaoAnimalRequest
 import com.iboi.rebanho.api.dto.VacinacaoAnimalDto
@@ -23,6 +24,7 @@ import com.iboi.rebanho.usecase.DeletarAnimalUseCase
 import com.iboi.rebanho.usecase.ImportarAnimaisCsvUseCase
 import com.iboi.rebanho.usecase.ListarAnimaisUseCase
 import com.iboi.rebanho.usecase.ListarMovimentacoesAnimalUseCase
+import com.iboi.rebanho.usecase.ListarPesagensAnimalUseCase
 import com.iboi.rebanho.usecase.ListarVacinacoesAnimalUseCase
 import com.iboi.rebanho.usecase.RegistrarMovimentacaoAnimalUseCase
 import com.iboi.rebanho.usecase.RegistrarVacinacaoAnimalUseCase
@@ -64,6 +66,7 @@ class AnimalController(
         private val importarAnimaisCsvUseCase: ImportarAnimaisCsvUseCase,
         private val registrarMovimentacaoAnimalUseCase: RegistrarMovimentacaoAnimalUseCase,
         private val listarMovimentacoesAnimalUseCase: ListarMovimentacoesAnimalUseCase,
+        private val listarPesagensAnimalUseCase: ListarPesagensAnimalUseCase,
         private val registrarVacinacaoAnimalUseCase: RegistrarVacinacaoAnimalUseCase,
         private val listarVacinacoesAnimalUseCase: ListarVacinacoesAnimalUseCase
 ) {
@@ -148,6 +151,12 @@ class AnimalController(
     @Operation(summary = "Listar movimentacoes do animal", description = "Retorna a trilha de rastreabilidade do animal")
     fun listarMovimentacoes(@PathVariable id: UUID): ResponseEntity<List<MovimentacaoAnimalDto>> {
         return ResponseEntity.ok(listarMovimentacoesAnimalUseCase.execute(id, SecurityUtils.currentFarmId()))
+    }
+
+    @GetMapping("/{id}/pesagens")
+    @Operation(summary = "Listar pesagens do animal", description = "Retorna o historico estruturado de pesagens do animal em ordem cronologica reversa")
+    fun listarPesagens(@PathVariable id: UUID): ResponseEntity<List<PesagemAnimalDto>> {
+        return ResponseEntity.ok(listarPesagensAnimalUseCase.execute(id, SecurityUtils.currentFarmId()))
     }
 
     @PostMapping("/{id}/vacinacoes")

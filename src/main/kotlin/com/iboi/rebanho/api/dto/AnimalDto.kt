@@ -13,6 +13,7 @@ import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Past
 import jakarta.validation.constraints.Size
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.LocalDate
 import java.util.UUID
 
@@ -221,7 +222,25 @@ data class VacinacaoAnimalDto(
 
 data class AnimalFichaCompletaDto(
         val animal: AnimalDto,
+        val pesagens: List<PesagemAnimalDto>,
         val eventos: List<EventoDto>,
         val vacinacoes: List<VacinacaoAnimalDto>,
         val movimentacoes: List<MovimentacaoAnimalDto>
 )
+
+data class PesagemAnimalDto(
+        val id: UUID,
+        val data: LocalDate,
+        val peso: BigDecimal,
+        val unidade: String = "kg",
+        val variacaoPeso: BigDecimal? = null,
+        val diasDesdeAnterior: Long? = null,
+        val ganhoMedioDiario: BigDecimal? = null,
+        val observacao: String? = null,
+        val responsavel: String? = null
+)
+
+fun calcularGanhoMedioDiario(variacaoPeso: BigDecimal, dias: Long): BigDecimal? {
+    if (dias <= 0) return null
+    return variacaoPeso.divide(BigDecimal.valueOf(dias), 3, RoundingMode.HALF_UP)
+}
