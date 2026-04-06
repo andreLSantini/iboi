@@ -1,6 +1,7 @@
 package com.iboi.rebanho.api.dto
 
 import com.iboi.rebanho.domain.CategoriaAnimal
+import com.iboi.rebanho.domain.OrigemAnimal
 import com.iboi.rebanho.domain.Raca
 import com.iboi.rebanho.domain.Sexo
 import com.iboi.rebanho.domain.StatusAnimal
@@ -45,6 +46,9 @@ data class CadastrarAnimalRequest(
         @field:NotNull(message = "Categoria e obrigatoria")
         val categoria: CategoriaAnimal,
 
+        @field:NotNull(message = "Origem e obrigatoria")
+        val origem: OrigemAnimal = OrigemAnimal.NASCIMENTO,
+
         val loteId: UUID? = null,
         val pastureId: UUID? = null,
         val paiId: UUID? = null,
@@ -72,6 +76,7 @@ data class AtualizarAnimalRequest(
         val pesoAtual: BigDecimal? = null,
 
         val categoria: CategoriaAnimal? = null,
+        val origem: OrigemAnimal? = null,
         val loteId: UUID? = null,
         val pastureId: UUID? = null,
         val status: StatusAnimal? = null,
@@ -97,6 +102,7 @@ data class AnimalDto(
         val pesoAtual: BigDecimal?,
         val status: StatusAnimal,
         val categoria: CategoriaAnimal,
+        val origem: OrigemAnimal,
         val lote: LoteResumoDto?,
         val pasture: PastureResumoDto?,
         val pai: AnimalResumoDto?,

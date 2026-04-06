@@ -26,6 +26,7 @@ fun Animal.toDto(): AnimalDto {
             pesoAtual = pesoAtual,
             status = status,
             categoria = categoria,
+            origem = origem,
             lote = lote?.let { LoteResumoDto(it.id!!, it.nome) },
             pasture = pasture?.toResumoDto(),
             pai = pai?.let { AnimalResumoDto(it.id!!, it.brinco, it.nome) },

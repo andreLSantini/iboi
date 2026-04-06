@@ -62,12 +62,20 @@ class CadastrarAnimalUseCase(
         val pai = request.paiId?.let {
             animalRepository.findById(it).orElseThrow {
                 IllegalArgumentException("Animal pai nao encontrado")
+            }.also { paiEncontrado ->
+                if (paiEncontrado.farm.id != farmId) {
+                    throw IllegalArgumentException("Animal pai nao pertence a fazenda informada")
+                }
             }
         }
 
         val mae = request.maeId?.let {
             animalRepository.findById(it).orElseThrow {
                 IllegalArgumentException("Animal mae nao encontrado")
+            }.also { maeEncontrada ->
+                if (maeEncontrada.farm.id != farmId) {
+                    throw IllegalArgumentException("Animal mae nao pertence a fazenda informada")
+                }
             }
         }
 
@@ -82,6 +90,7 @@ class CadastrarAnimalUseCase(
                         dataNascimento = request.dataNascimento,
                         pesoAtual = request.pesoAtual,
                         categoria = request.categoria,
+                        origem = request.origem,
                         farm = farm,
                         lote = lote,
                         pasture = pasture,

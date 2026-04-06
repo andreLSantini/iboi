@@ -26,6 +26,7 @@ import type {
   FarmSummary,
   LoteDto,
   MovimentacaoAnimalDto,
+  OrigemAnimal,
   Pasture,
   Raca,
   RegistrarMovimentacaoAnimalRequest,
@@ -228,6 +229,7 @@ export default function AnimalDetalhes() {
     raca: undefined,
     pesoAtual: undefined,
     categoria: undefined,
+    origem: undefined,
     loteId: undefined,
     pastureId: undefined,
     status: undefined,
@@ -275,6 +277,7 @@ export default function AnimalDetalhes() {
         raca: animalData.raca,
         pesoAtual: animalData.pesoAtual,
         categoria: animalData.categoria,
+        origem: animalData.origem,
         loteId: animalData.lote?.id,
         pastureId: animalData.pasture?.id,
         status: animalData.status,
@@ -478,6 +481,7 @@ export default function AnimalDetalhes() {
         raca: inlineForm.raca,
         pesoAtual: inlineForm.pesoAtual,
         categoria: inlineForm.categoria,
+        origem: inlineForm.origem,
         loteId: inlineForm.loteId || undefined,
         pastureId: inlineForm.pastureId || undefined,
         status: inlineForm.status,
@@ -557,6 +561,7 @@ export default function AnimalDetalhes() {
     'OUTRAS',
   ];
   const categoriaOptions: CategoriaAnimal[] = ['BEZERRO', 'NOVILHO', 'NOVILHA', 'BOI', 'VACA', 'TOURO', 'MATRIZ'];
+  const origemOptions: OrigemAnimal[] = ['NASCIMENTO', 'COMPRA'];
   const statusOptions: StatusAnimal[] = ['ATIVO', 'VENDIDO', 'MORTO', 'DESCARTADO', 'TRANSFERIDO'];
   const vaccineOptions: TipoVacina[] = ['AFTOSA', 'BRUCELOSE', 'CLOSTRIDIOSE', 'RAIVA', 'LEPTOSE', 'IBR_BVD', 'OUTRA'];
   const movementOptions: TipoMovimentacaoAnimal[] = ['ENTRE_PASTOS', 'ENTRE_FAZENDAS', 'SAIDA_EXTERNA', 'ENTRADA_EXTERNA'];
@@ -697,6 +702,7 @@ export default function AnimalDetalhes() {
                 <InfoRow label="Codigo SISBOV" value={animal.codigoSisbov || '-'} />
                 <InfoRow label="Raca" value={animal.raca} />
                 <InfoRow label="Categoria" value={animal.categoria} />
+                <InfoRow label="Origem" value={animal.origem === 'NASCIMENTO' ? 'Nascimento' : 'Compra'} />
                 <InfoRow label="Status" value={animal.status} />
                 <InfoRow label="Lote atual" value={animal.lote?.nome || '-'} />
                 <InfoRow label="Pasto atual" value={animal.pasture?.nome || '-'} />
@@ -738,6 +744,16 @@ export default function AnimalDetalhes() {
                       {categoriaOptions.map((categoria) => (
                         <option key={categoria} value={categoria}>
                           {categoria}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="form-label">Origem</label>
+                    <select className="form-input" value={inlineForm.origem || animal.origem} onChange={(e) => setInlineForm((current) => ({ ...current, origem: e.target.value as OrigemAnimal }))}>
+                      {origemOptions.map((origem) => (
+                        <option key={origem} value={origem}>
+                          {origem === 'NASCIMENTO' ? 'Nascimento' : 'Compra'}
                         </option>
                       ))}
                     </select>

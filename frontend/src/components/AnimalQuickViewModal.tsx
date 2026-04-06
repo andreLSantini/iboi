@@ -126,6 +126,7 @@ export default function AnimalQuickViewModal({ animalId, open, onClose }: Props)
                       <InfoBlock label="Raca" value={animal.raca} />
                       <InfoBlock label="Sexo" value={animal.sexo} />
                       <InfoBlock label="Status" value={animal.status} />
+                      <InfoBlock label="Origem" value={animal.origem === 'NASCIMENTO' ? 'Nascimento' : 'Compra'} />
                       <InfoBlock label="Lote" value={animal.lote?.nome || '-'} />
                       <InfoBlock label="SISBOV" value={animal.codigoSisbov || (animal.sisbovAtivo ? 'Ativo sem codigo' : 'Nao ativo')} />
                       <InfoBlock label="RFID" value={animal.rfid || '-'} />

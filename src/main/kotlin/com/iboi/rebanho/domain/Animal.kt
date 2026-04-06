@@ -20,7 +20,8 @@ import java.util.*
                 Index(name = "idx_animal_farm", columnList = "farm_id"),
                 Index(name = "idx_animal_rfid", columnList = "rfid"),
                 Index(name = "idx_animal_sisbov", columnList = "codigo_sisbov"),
-                Index(name = "idx_animal_pasture", columnList = "pasture_id")
+                Index(name = "idx_animal_pasture", columnList = "pasture_id"),
+                Index(name = "idx_animal_origem", columnList = "origem")
         ]
 )
 class Animal(
@@ -61,6 +62,10 @@ class Animal(
         @Enumerated(EnumType.STRING)
         @Column(nullable = false)
         var categoria: CategoriaAnimal,
+
+        @Enumerated(EnumType.STRING)
+        @Column(nullable = false, length = 30)
+        var origem: OrigemAnimal = OrigemAnimal.NASCIMENTO,
 
         @ManyToOne
         @JoinColumn(name = "farm_id", nullable = false)

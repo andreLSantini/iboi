@@ -9,7 +9,7 @@ export interface OnboardingRequest {
   nomeFazenda: string;
   cidade: string;
   estado: string;
-  'tipoProdu\u00E7\u00E3o': 'CORTE' | 'LEITE' | 'MISTO';
+  tipoProducao: 'CORTE' | 'LEITE' | 'MISTO';
   tamanho?: number;
 }
 
@@ -266,6 +266,7 @@ export interface DashboardInteligenteResponse {
 export type Sexo = 'MACHO' | 'FEMEA';
 export type StatusAnimal = 'ATIVO' | 'VENDIDO' | 'MORTO' | 'DESCARTADO' | 'TRANSFERIDO';
 export type CategoriaAnimal = 'BEZERRO' | 'NOVILHO' | 'NOVILHA' | 'BOI' | 'VACA' | 'TOURO' | 'MATRIZ';
+export type OrigemAnimal = 'NASCIMENTO' | 'COMPRA';
 
 export type Raca =
   | 'NELORE'
@@ -298,6 +299,7 @@ export interface AnimalDto {
   pesoAtual?: number;
   status: StatusAnimal;
   categoria: CategoriaAnimal;
+  origem: OrigemAnimal;
   lote?: {
     id: string;
     nome: string;
@@ -329,6 +331,7 @@ export interface CadastrarAnimalRequest {
   dataNascimento: string;
   pesoAtual?: number;
   categoria: CategoriaAnimal;
+  origem: OrigemAnimal;
   loteId?: string;
   pastureId?: string;
   paiId?: string;
@@ -345,6 +348,7 @@ export interface AtualizarAnimalRequest {
   raca?: Raca;
   pesoAtual?: number;
   categoria?: CategoriaAnimal;
+  origem?: OrigemAnimal;
   loteId?: string;
   pastureId?: string;
   status?: StatusAnimal;

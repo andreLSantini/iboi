@@ -216,7 +216,7 @@ export default function DashboardHome() {
 
   const downloadTemplate = () => {
     const csv = [
-      'brinco;nome;sexo;raca;dataNascimento;pesoAtual;categoria;lote;pasto;rfid;codigoSisbov;dataEntrada;sisbovAtivo;observacoes',
+      'brinco;nome;sexo;raca;dataNascimento;pesoAtual;categoria;origem;lote;pasto;rfid;codigoSisbov;dataEntrada;sisbovAtivo;observacoes',
       '001;Lote inicial;MACHO;NELORE;2024-01-10;210;BEZERRO;Lote A;Pasto 1;;;2024-01-10;false;Primeiro cadastro',
     ].join('\n');
 

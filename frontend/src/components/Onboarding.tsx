@@ -12,8 +12,6 @@ const ESTADOS_BRASIL = [
   'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO',
 ];
 
-const TIPO_PRODUCAO_KEY = 'tipoProdu\u00E7\u00E3o' as const;
-
 export default function Onboarding() {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
@@ -30,7 +28,7 @@ export default function Onboarding() {
     nomeFazenda: '',
     cidade: '',
     estado: '',
-    [TIPO_PRODUCAO_KEY]: 'CORTE',
+    tipoProducao: 'CORTE',
     tamanho: undefined,
   });
 
@@ -136,8 +134,8 @@ export default function Onboarding() {
                 {(['CORTE', 'LEITE', 'MISTO'] as const).map((tipo) => (
                   <button
                     key={tipo}
-                    onClick={() => updateField(TIPO_PRODUCAO_KEY, tipo)}
-                    className={formData[TIPO_PRODUCAO_KEY] === tipo ? 'btn-primary' : 'btn-secondary'}
+                    onClick={() => updateField('tipoProducao', tipo)}
+                    className={formData.tipoProducao === tipo ? 'btn-primary' : 'btn-secondary'}
                   >
                     {tipo}
                   </button>

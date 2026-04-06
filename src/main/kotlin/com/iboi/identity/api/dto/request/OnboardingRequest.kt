@@ -1,5 +1,7 @@
 package com.iboi.identity.api.dto.request
 
+import com.fasterxml.jackson.annotation.JsonAlias
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.iboi.identity.domain.EmpresaType
 import com.iboi.identity.domain.ProductionType
 
@@ -19,6 +21,8 @@ data class OnboardingRequest(
         val nomeFazenda: String,
         val cidade: String,
         val estado: String,
-        val tipoProdução: ProductionType,
+        @field:JsonProperty("tipoProducao")
+        @field:JsonAlias("tipoProdução")
+        val tipoProducao: ProductionType,
         val tamanho: Double? = null
 )

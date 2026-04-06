@@ -22,6 +22,7 @@ import type {
   AtualizarAnimalRequest,
   Sexo,
   CategoriaAnimal,
+  OrigemAnimal,
   Raca,
   StatusAnimal,
   LoteDto,
@@ -64,6 +65,7 @@ export default function Animais() {
     dataEntrada: '',
     pesoAtual: undefined,
     categoria: 'BEZERRO',
+    origem: 'NASCIMENTO',
     loteId: undefined,
     pastureId: undefined,
     sisbovAtivo: false,
@@ -129,6 +131,7 @@ export default function Animais() {
           raca: formData.raca,
           pesoAtual: formData.pesoAtual,
           categoria: formData.categoria,
+          origem: formData.origem,
           loteId: formData.loteId,
           pastureId: formData.pastureId,
           dataEntrada: formData.dataEntrada || undefined,
@@ -171,6 +174,7 @@ export default function Animais() {
         dataEntrada: animal.dataEntrada || '',
         pesoAtual: animal.pesoAtual,
         categoria: animal.categoria,
+        origem: animal.origem,
         loteId: animal.lote?.id,
         pastureId: animal.pasture?.id,
         sisbovAtivo: animal.sisbovAtivo,
@@ -189,6 +193,7 @@ export default function Animais() {
         dataEntrada: '',
         pesoAtual: undefined,
         categoria: 'BEZERRO',
+        origem: 'NASCIMENTO',
         loteId: undefined,
         pastureId: undefined,
         sisbovAtivo: false,
@@ -274,6 +279,7 @@ export default function Animais() {
     'TOURO',
     'MATRIZ'
   ];
+  const origensOptions: OrigemAnimal[] = ['NASCIMENTO', 'COMPRA'];
 
   const statusOptions: StatusAnimal[] = [
     'ATIVO',
@@ -670,6 +676,26 @@ export default function Animais() {
                     onChange={(e) => setFormData({ ...formData, dataNascimento: e.target.value })}
                     className="input-field"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Origem *
+                  </label>
+                  <select
+                    required
+                    value={formData.origem}
+                    onChange={(e) =>
+                      setFormData({ ...formData, origem: e.target.value as OrigemAnimal })
+                    }
+                    className="input-field"
+                  >
+                    {origensOptions.map((origem) => (
+                      <option key={origem} value={origem}>
+                        {origem === 'NASCIMENTO' ? 'Nascimento' : 'Compra'}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>

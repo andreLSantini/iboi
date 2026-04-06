@@ -6,6 +6,7 @@ import com.iboi.plano.service.PlanoAcessoService
 import com.iboi.rebanho.api.dto.ImportarAnimaisResponse
 import com.iboi.rebanho.domain.Animal
 import com.iboi.rebanho.domain.CategoriaAnimal
+import com.iboi.rebanho.domain.OrigemAnimal
 import com.iboi.rebanho.domain.Raca
 import com.iboi.rebanho.domain.Sexo
 import com.iboi.rebanho.domain.StatusAnimal
@@ -105,6 +106,7 @@ class ImportarAnimaisCsvUseCase(
                                 dataNascimento = LocalDate.parse(row.valueOf("datanascimento", numeroLinha)),
                                 pesoAtual = row["pesoatual"]?.takeIf { it.isNotBlank() }?.replace(",", ".")?.let { BigDecimal(it) },
                                 categoria = parseCategoria(row.valueOf("categoria", numeroLinha)),
+                                origem = row["origem"]?.takeIf { it.isNotBlank() }?.let { parseOrigem(it) } ?: OrigemAnimal.NASCIMENTO,
                                 farm = farm,
                                 lote = lote,
                                 pasture = pasture,
@@ -167,5 +169,11 @@ class ImportarAnimaisCsvUseCase(
         val normalized = normalizeHeader(value)
         return Raca.entries.firstOrNull { normalizeHeader(it.name) == normalized }
                 ?: throw IllegalArgumentException("raca invalida: $value")
+    }
+
+    private fun parseOrigem(value: String): OrigemAnimal = when (normalizeHeader(value)) {
+        "nascimento" -> OrigemAnimal.NASCIMENTO
+        "compra", "comprado" -> OrigemAnimal.COMPRA
+        else -> throw IllegalArgumentException("origem invalida: $value")
     }
 }

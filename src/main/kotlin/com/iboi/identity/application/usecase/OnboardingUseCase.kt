@@ -75,7 +75,7 @@ class OnboardingUseCase(
                         name = request.nomeFazenda,
                         city = request.cidade,
                         state = request.estado,
-                        productionType = request.tipoProdução,
+                        productionType = request.tipoProducao,
                         size = request.tamanho,
                         empresa = empresa
                 )

@@ -70,6 +70,7 @@ class AtualizarAnimalUseCase(
         request.raca?.let { animal.raca = it }
         request.pesoAtual?.let { animal.pesoAtual = it }
         request.categoria?.let { animal.categoria = it }
+        request.origem?.let { animal.origem = it }
         request.status?.let { animal.status = it }
         request.dataEntrada?.let { animal.dataEntrada = it }
         request.sisbovAtivo?.let { animal.sisbovAtivo = it }

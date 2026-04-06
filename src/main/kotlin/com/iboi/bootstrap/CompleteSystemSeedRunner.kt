@@ -39,6 +39,7 @@ import com.iboi.rebanho.domain.CategoriaAnimal
 import com.iboi.rebanho.domain.Evento
 import com.iboi.rebanho.domain.Lote
 import com.iboi.rebanho.domain.MovimentacaoAnimal
+import com.iboi.rebanho.domain.OrigemAnimal
 import com.iboi.rebanho.domain.Raca
 import com.iboi.rebanho.domain.Sexo
 import com.iboi.rebanho.domain.StatusAnimal
@@ -263,6 +264,7 @@ class CompleteSystemSeedRunner(
                         pesoAtual = BigDecimal("468.50"),
                         status = StatusAnimal.ATIVO,
                         categoria = CategoriaAnimal.MATRIZ,
+                        origem = OrigemAnimal.NASCIMENTO,
                         farm = santaHelena,
                         lote = loteMatrizes,
                         pasture = pastoMaternidade,
@@ -283,6 +285,7 @@ class CompleteSystemSeedRunner(
                         pesoAtual = BigDecimal("421.80"),
                         status = StatusAnimal.ATIVO,
                         categoria = CategoriaAnimal.NOVILHA,
+                        origem = OrigemAnimal.NASCIMENTO,
                         farm = santaHelena,
                         lote = loteRecria,
                         pasture = pastoRecria,
@@ -303,6 +306,7 @@ class CompleteSystemSeedRunner(
                         pesoAtual = BigDecimal("512.40"),
                         status = StatusAnimal.ATIVO,
                         categoria = CategoriaAnimal.NOVILHO,
+                        origem = OrigemAnimal.NASCIMENTO,
                         farm = santaHelena,
                         lote = loteEngorda,
                         pasture = pastoEngorda,
@@ -323,6 +327,7 @@ class CompleteSystemSeedRunner(
                         pesoAtual = BigDecimal("284.30"),
                         status = StatusAnimal.ATIVO,
                         categoria = CategoriaAnimal.BEZERRO,
+                        origem = OrigemAnimal.NASCIMENTO,
                         farm = santaHelena,
                         lote = loteRecria,
                         pasture = pastoMaternidade,
@@ -343,6 +348,7 @@ class CompleteSystemSeedRunner(
                         pesoAtual = BigDecimal("447.20"),
                         status = StatusAnimal.ATIVO,
                         categoria = CategoriaAnimal.VACA,
+                        origem = OrigemAnimal.COMPRA,
                         farm = boaVista,
                         lote = loteQuarentena,
                         pasture = pastoQuarentena,
@@ -363,6 +369,7 @@ class CompleteSystemSeedRunner(
                         pesoAtual = BigDecimal("533.90"),
                         status = StatusAnimal.TRANSFERIDO,
                         categoria = CategoriaAnimal.BOI,
+                        origem = OrigemAnimal.COMPRA,
                         farm = boaVista,
                         lote = loteQuarentena,
                         pasture = pastoReserva,
