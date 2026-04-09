@@ -31,5 +31,5 @@ asaas:
 
 app:
   seed:
-    enabled : true
+    enabled : false
 #    enabled: ${APP_SEED_ENABLED:false}
