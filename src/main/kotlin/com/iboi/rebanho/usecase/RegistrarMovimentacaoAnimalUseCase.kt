@@ -13,6 +13,7 @@ import com.iboi.rebanho.domain.TipoEvento
 import com.iboi.rebanho.domain.TipoMovimentacaoAnimal
 import com.iboi.rebanho.repository.AnimalRepository
 import com.iboi.rebanho.repository.EventoRepository
+import com.iboi.rebanho.repository.LoteRepository
 import com.iboi.rebanho.repository.MovimentacaoAnimalRepository
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
@@ -25,6 +26,7 @@ class RegistrarMovimentacaoAnimalUseCase(
         private val farmRepository: FarmRepository,
         private val pastureRepository: PastureRepository,
         private val usuarioRepository: UsuarioRepository,
+        private val loteRepository: LoteRepository,
         private val movimentacaoAnimalRepository: MovimentacaoAnimalRepository,
         private val eventoRepository: EventoRepository
 ) {
@@ -59,13 +61,33 @@ class RegistrarMovimentacaoAnimalUseCase(
             }
         }
 
+        val destinoLote = request.destinoLoteId?.let {
+            loteRepository.findById(it).orElseThrow {
+                IllegalArgumentException("Lote de destino nao encontrado")
+            }
+        }
+
         when (request.tipo) {
+            TipoMovimentacaoAnimal.ENTRE_LOTES -> {
+                require(destinoLote != null) { "Movimentacao entre lotes exige lote de destino" }
+                if (destinoLote.farm.id != farmId) {
+                    throw IllegalArgumentException("Lote de destino nao pertence a fazenda ativa")
+                }
+                animal.lote = destinoLote
+            }
+
             TipoMovimentacaoAnimal.ENTRE_PASTOS -> {
                 require(destinoPasture != null) { "Movimentacao entre pastos exige pasto de destino" }
                 if (destinoPasture.farm.id != farmId) {
                     throw IllegalArgumentException("Pasto de destino nao pertence a fazenda ativa")
                 }
                 animal.pasture = destinoPasture
+                if (destinoLote != null) {
+                    if (destinoLote.farm.id != farmId) {
+                        throw IllegalArgumentException("Lote de destino nao pertence a fazenda ativa")
+                    }
+                    animal.lote = destinoLote
+                }
             }
 
             TipoMovimentacaoAnimal.ENTRE_FAZENDAS -> {
@@ -73,9 +95,12 @@ class RegistrarMovimentacaoAnimalUseCase(
                 if (destinoPasture != null && destinoPasture.farm.id != destinoFarm.id) {
                     throw IllegalArgumentException("Pasto de destino nao pertence a fazenda de destino")
                 }
+                if (destinoLote != null && destinoLote.farm.id != destinoFarm.id) {
+                    throw IllegalArgumentException("Lote de destino nao pertence a fazenda de destino")
+                }
                 animal.farm = destinoFarm
                 animal.pasture = destinoPasture
-                animal.lote = null
+                animal.lote = destinoLote
                 animal.status = StatusAnimal.ATIVO
             }
 
@@ -89,8 +114,12 @@ class RegistrarMovimentacaoAnimalUseCase(
                 if (destinoPasture != null && destinoPasture.farm.id != farmId) {
                     throw IllegalArgumentException("Pasto de destino nao pertence a fazenda ativa")
                 }
+                if (destinoLote != null && destinoLote.farm.id != farmId) {
+                    throw IllegalArgumentException("Lote de destino nao pertence a fazenda ativa")
+                }
                 animal.status = StatusAnimal.ATIVO
                 animal.pasture = destinoPasture
+                animal.lote = destinoLote
             }
         }
 
@@ -139,6 +168,8 @@ class RegistrarMovimentacaoAnimalUseCase(
             origemPastoNome: String?,
             destinoPastoNome: String?
     ): String = when (request.tipo) {
+        TipoMovimentacaoAnimal.ENTRE_LOTES ->
+            "Movimentado para o lote de destino"
         TipoMovimentacaoAnimal.ENTRE_PASTOS ->
             "Movimentado do pasto ${origemPastoNome ?: "nao informado"} para ${destinoPastoNome ?: "nao informado"}"
         TipoMovimentacaoAnimal.ENTRE_FAZENDAS ->

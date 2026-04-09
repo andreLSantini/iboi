@@ -9,6 +9,7 @@ import com.iboi.rebanho.domain.TipoMovimentacaoAnimal
 import com.iboi.rebanho.domain.TipoVacina
 import jakarta.validation.constraints.DecimalMin
 import jakarta.validation.constraints.NotBlank
+import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Past
 import jakarta.validation.constraints.Size
@@ -148,6 +149,36 @@ data class RegistrarMovimentacaoAnimalRequest(
 
         val destinoFarmId: UUID? = null,
         val destinoPastureId: UUID? = null,
+        val destinoLoteId: UUID? = null,
+
+        @field:Size(max = 64, message = "Numero GTA deve ter no maximo 64 caracteres")
+        val numeroGta: String? = null,
+
+        @field:Size(max = 128, message = "Documento externo deve ter no maximo 128 caracteres")
+        val documentoExterno: String? = null,
+
+        @field:Size(max = 255, message = "Motivo deve ter no maximo 255 caracteres")
+        val motivo: String? = null,
+
+        @field:Size(max = 1000, message = "Observacoes devem ter no maximo 1000 caracteres")
+        val observacoes: String? = null
+)
+
+data class RegistrarMovimentacaoLoteRequest(
+        val loteOrigemId: UUID? = null,
+
+        @field:NotEmpty(message = "Selecione ao menos um animal")
+        val animalIds: List<UUID>,
+
+        @field:NotNull(message = "Tipo de movimentacao e obrigatorio")
+        val tipo: TipoMovimentacaoAnimal,
+
+        @field:NotNull(message = "Data da movimentacao e obrigatoria")
+        val movimentadaEm: LocalDate,
+
+        val destinoFarmId: UUID? = null,
+        val destinoPastureId: UUID? = null,
+        val destinoLoteId: UUID? = null,
 
         @field:Size(max = 64, message = "Numero GTA deve ter no maximo 64 caracteres")
         val numeroGta: String? = null,
@@ -175,6 +206,18 @@ data class MovimentacaoAnimalDto(
         val motivo: String?,
         val observacoes: String?,
         val responsavel: String?
+)
+
+data class MovimentacaoLoteResultadoDto(
+        val totalAnimais: Int,
+        val tipo: TipoMovimentacaoAnimal,
+        val movimentadaEm: LocalDate,
+        val loteOrigem: LoteResumoDto?,
+        val loteDestino: LoteResumoDto?,
+        val farmDestino: FarmResumoDto?,
+        val pastureDestino: PastureResumoDto?,
+        val animais: List<AnimalResumoDto>,
+        val movimentacoes: List<MovimentacaoAnimalDto>
 )
 
 data class RegistrarVacinacaoAnimalRequest(

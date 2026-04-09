@@ -3,8 +3,11 @@ package com.iboi.bootstrap
 import com.iboi.financeiro.domain.CategoriaDespesa
 import com.iboi.financeiro.domain.Despesa
 import com.iboi.financeiro.domain.FormaPagamento
+import com.iboi.financeiro.domain.Receita
 import com.iboi.financeiro.domain.StatusLancamentoFinanceiro
+import com.iboi.financeiro.domain.TipoReceita
 import com.iboi.financeiro.repository.DespesaRepository
+import com.iboi.financeiro.repository.ReceitaRepository
 import com.iboi.ia.domain.Alerta
 import com.iboi.ia.domain.PrioridadeAlerta
 import com.iboi.ia.domain.StatusAlerta
@@ -79,6 +82,7 @@ class CompleteSystemSeedRunner(
         private val movimentacaoAnimalRepository: MovimentacaoAnimalRepository,
         private val vacinacaoAnimalRepository: VacinacaoAnimalRepository,
         private val despesaRepository: DespesaRepository,
+        private val receitaRepository: ReceitaRepository,
         private val alertaRepository: AlertaRepository,
         private val assinaturaRepository: AssinaturaRepository,
         private val pagamentoRepository: PagamentoRepository,
@@ -111,7 +115,7 @@ class CompleteSystemSeedRunner(
 
         val admin = usuarioRepository.save(
                 Usuario(
-                        nome = "Andre Demo",
+                        nome = "BovCore Demo Master",
                         email = adminEmail,
                         telefone = "(11) 99999-0001",
                         senhaHash = passwordEncoder.encode("bovcore123"),
@@ -122,7 +126,7 @@ class CompleteSystemSeedRunner(
 
         val operador = usuarioRepository.save(
                 Usuario(
-                        nome = "Maria Operacao",
+                        nome = "Maria Operacao Campo",
                         email = "operacao@bovcore.com.br",
                         telefone = "(11) 99999-0002",
                         senhaHash = passwordEncoder.encode("bovcore123"),
@@ -252,6 +256,8 @@ class CompleteSystemSeedRunner(
         val loteRecria = loteRepository.save(Lote(nome = "Recria Machos", descricao = "Animais em recria com foco em GMD", farm = santaHelena))
         val loteEngorda = loteRepository.save(Lote(nome = "Engorda Intensiva", descricao = "Terminação de machos", farm = santaHelena))
         val loteQuarentena = loteRepository.save(Lote(nome = "Entrada Externa", descricao = "Animais recém chegados", farm = boaVista))
+        val loteElite = loteRepository.save(Lote(nome = "Elite Genetica", descricao = "Matrizes e reprodutores com destaque genetico", farm = santaHelena))
+        val loteReserva = loteRepository.save(Lote(nome = "Reserva Seca", descricao = "Lote estrategico para contingencia e suporte", farm = boaVista))
 
         val animal1 = animalRepository.save(
                 Animal(
@@ -337,6 +343,27 @@ class CompleteSystemSeedRunner(
                         sisbovAtivo = false
                 )
         )
+        val animal7 = animalRepository.save(
+                Animal(
+                        brinco = "BC-1005",
+                        rfid = "RFID-0001005",
+                        codigoSisbov = "SISBOV-1005",
+                        nome = "Comodoro",
+                        sexo = Sexo.MACHO,
+                        raca = Raca.ANGUS,
+                        dataNascimento = hoje.minusYears(6),
+                        pesoAtual = BigDecimal("811.30"),
+                        status = StatusAnimal.ATIVO,
+                        categoria = CategoriaAnimal.TOURO,
+                        origem = OrigemAnimal.COMPRA,
+                        farm = santaHelena,
+                        lote = loteElite,
+                        pasture = pastoMaternidade,
+                        observacoes = "Reprodutor destaque da bateria 2025/2026.",
+                        dataEntrada = hoje.minusYears(2),
+                        sisbovAtivo = true
+                )
+        )
         val animal5 = animalRepository.save(
                 Animal(
                         brinco = "BC-2001",
@@ -379,6 +406,117 @@ class CompleteSystemSeedRunner(
                         sisbovAtivo = true
                 )
         )
+        val animal8 = animalRepository.save(
+                Animal(
+                        brinco = "BC-1006",
+                        rfid = "RFID-0001006",
+                        codigoSisbov = "SISBOV-1006",
+                        nome = "Safira",
+                        sexo = Sexo.FEMEA,
+                        raca = Raca.NELORE,
+                        dataNascimento = hoje.minusMonths(10),
+                        pesoAtual = BigDecimal("236.80"),
+                        status = StatusAnimal.ATIVO,
+                        categoria = CategoriaAnimal.BEZERRO,
+                        origem = OrigemAnimal.NASCIMENTO,
+                        farm = santaHelena,
+                        lote = loteMatrizes,
+                        pasture = pastoMaternidade,
+                        pai = animal7,
+                        mae = animal1,
+                        observacoes = "Bezerra filha de matriz destaque, usada para demonstracao de genealogia.",
+                        dataEntrada = hoje.minusMonths(10),
+                        sisbovAtivo = true
+                )
+        )
+        val animal9 = animalRepository.save(
+                Animal(
+                        brinco = "BC-1007",
+                        rfid = "RFID-0001007",
+                        codigoSisbov = "SISBOV-1007",
+                        nome = "Falcao",
+                        sexo = Sexo.MACHO,
+                        raca = Raca.SENEPOL,
+                        dataNascimento = hoje.minusYears(2).minusMonths(4),
+                        pesoAtual = BigDecimal("548.10"),
+                        status = StatusAnimal.ATIVO,
+                        categoria = CategoriaAnimal.BOI,
+                        origem = OrigemAnimal.COMPRA,
+                        farm = santaHelena,
+                        lote = loteEngorda,
+                        pasture = pastoEngorda,
+                        observacoes = "Animal de terminacao com desempenho acima da media do lote.",
+                        dataEntrada = hoje.minusMonths(9),
+                        sisbovAtivo = true
+                )
+        )
+        val animal10 = animalRepository.save(
+                Animal(
+                        brinco = "BC-2003",
+                        rfid = "RFID-0002003",
+                        codigoSisbov = "SISBOV-2003",
+                        nome = "Brisa",
+                        sexo = Sexo.FEMEA,
+                        raca = Raca.BRAHMAN,
+                        dataNascimento = hoje.minusYears(5),
+                        pesoAtual = BigDecimal("472.60"),
+                        status = StatusAnimal.ATIVO,
+                        categoria = CategoriaAnimal.MATRIZ,
+                        origem = OrigemAnimal.COMPRA,
+                        farm = boaVista,
+                        lote = loteReserva,
+                        pasture = pastoReserva,
+                        observacoes = "Matriz estabilizada na fazenda de apoio e em preparo reprodutivo.",
+                        dataEntrada = hoje.minusMonths(14),
+                        sisbovAtivo = true
+                )
+        )
+        val animal11 = animalRepository.save(
+                Animal(
+                        brinco = "BC-2004",
+                        rfid = "RFID-0002004",
+                        codigoSisbov = "SISBOV-2004",
+                        nome = "Orion",
+                        sexo = Sexo.MACHO,
+                        raca = Raca.CRUZAMENTO_INDUSTRIAL,
+                        dataNascimento = hoje.minusYears(1).minusMonths(8),
+                        pesoAtual = BigDecimal("391.40"),
+                        status = StatusAnimal.ATIVO,
+                        categoria = CategoriaAnimal.NOVILHO,
+                        origem = OrigemAnimal.COMPRA,
+                        farm = boaVista,
+                        lote = loteQuarentena,
+                        pasture = pastoQuarentena,
+                        observacoes = "Animal de entrada recente, usado para vitrine de quarentena e adaptacao.",
+                        dataEntrada = hoje.minusDays(11),
+                        sisbovAtivo = false
+                )
+        )
+        val animal12 = animalRepository.save(
+                Animal(
+                        brinco = "BC-2005",
+                        rfid = "RFID-0002005",
+                        codigoSisbov = "SISBOV-2005",
+                        nome = "Gaia",
+                        sexo = Sexo.FEMEA,
+                        raca = Raca.GUZERA,
+                        dataNascimento = hoje.minusYears(2).minusMonths(2),
+                        pesoAtual = BigDecimal("344.20"),
+                        status = StatusAnimal.ATIVO,
+                        categoria = CategoriaAnimal.NOVILHA,
+                        origem = OrigemAnimal.COMPRA,
+                        farm = boaVista,
+                        lote = loteReserva,
+                        pasture = pastoReserva,
+                        observacoes = "Novilha selecionada para reposicao, com historico sanitario exemplar.",
+                        dataEntrada = hoje.minusMonths(7),
+                        sisbovAtivo = true
+                )
+        )
+
+        animal4.pai = animal7
+        animal4.mae = animal1
+        animalRepository.save(animal4)
 
         eventoRepository.saveAll(
                 listOf(
@@ -440,6 +578,91 @@ class CompleteSystemSeedRunner(
                 )
         )
 
+        eventoRepository.saveAll(
+                listOf(
+                        Evento(
+                                animal = animal1,
+                                farm = santaHelena,
+                                tipo = TipoEvento.COBERTURA,
+                                data = hoje.minusDays(96),
+                                descricao = "Cobertura natural com touro Comodoro.",
+                                reprodutorNome = "Comodoro",
+                                protocoloReprodutivo = "Monta controlada 2026",
+                                dataPrevistaParto = hoje.plusDays(189),
+                                observacaoReprodutiva = "Cio observado e confirmado em curral.",
+                                responsavel = admin
+                        ),
+                        Evento(
+                                animal = animal1,
+                                farm = santaHelena,
+                                tipo = TipoEvento.DIAGNOSTICO_GESTACAO,
+                                data = hoje.minusDays(52),
+                                descricao = "Diagnostico de gestacao positivo.",
+                                diagnosticoPositivo = true,
+                                dataPrevistaParto = hoje.plusDays(189),
+                                observacaoReprodutiva = "Prenhez confirmada em ultrassom.",
+                                responsavel = admin
+                        ),
+                        Evento(
+                                animal = animal10,
+                                farm = boaVista,
+                                tipo = TipoEvento.INSEMINACAO,
+                                data = hoje.minusDays(38),
+                                descricao = "IATF concluida na matriz Brisa.",
+                                reprodutorNome = "Semen Elite Lote 14",
+                                protocoloReprodutivo = "IATF protocolo 12 dias",
+                                dataPrevistaParto = hoje.plusDays(247),
+                                observacaoReprodutiva = "Sem intercorrencias no protocolo.",
+                                responsavel = admin
+                        ),
+                        Evento(
+                                animal = animal10,
+                                farm = boaVista,
+                                tipo = TipoEvento.DIAGNOSTICO_GESTACAO,
+                                data = hoje.minusDays(6),
+                                descricao = "Diagnostico recente ainda pendente de confirmacao final.",
+                                observacaoReprodutiva = "Retornar em 14 dias para nova avaliacao.",
+                                responsavel = admin
+                        ),
+                        Evento(
+                                animal = animal8,
+                                farm = santaHelena,
+                                tipo = TipoEvento.NASCIMENTO,
+                                data = hoje.minusMonths(10),
+                                descricao = "Nascimento da bezerra Safira com parto assistido leve.",
+                                peso = BigDecimal("31.40"),
+                                responsavel = operador
+                        ),
+                        Evento(
+                                animal = animal9,
+                                farm = santaHelena,
+                                tipo = TipoEvento.PESAGEM,
+                                data = hoje.minusDays(18),
+                                descricao = "Pesagem intermediaria de desempenho do Falcao.",
+                                peso = BigDecimal("531.20"),
+                                responsavel = operador
+                        ),
+                        Evento(
+                                animal = animal9,
+                                farm = santaHelena,
+                                tipo = TipoEvento.PESAGEM,
+                                data = hoje.minusDays(3),
+                                descricao = "Pesagem recente do Falcao para curva de engorda.",
+                                peso = BigDecimal("548.10"),
+                                responsavel = admin
+                        ),
+                        Evento(
+                                animal = animal11,
+                                farm = boaVista,
+                                tipo = TipoEvento.COMPRA,
+                                data = hoje.minusDays(11),
+                                descricao = "Entrada do animal Orion com conferencia documental completa.",
+                                valor = BigDecimal("8420.00"),
+                                responsavel = admin
+                        )
+                )
+        )
+
         vacinacaoAnimalRepository.saveAll(
                 listOf(
                         VacinacaoAnimal(
@@ -484,6 +707,39 @@ class CompleteSystemSeedRunner(
                 )
         )
 
+        vacinacaoAnimalRepository.saveAll(
+                listOf(
+                        VacinacaoAnimal(
+                                animal = animal8,
+                                farm = santaHelena,
+                                tipo = TipoVacina.CLOSTRIDIOSE,
+                                nomeVacina = "Clostridiose Plus",
+                                dose = BigDecimal("2.00"),
+                                unidadeMedida = "mL",
+                                aplicadaEm = hoje.minusDays(21),
+                                proximaDoseEm = hoje.plusDays(9),
+                                fabricante = "BioCampo",
+                                loteVacina = "CLS-2026-21",
+                                observacoes = "Primeiro reforco da bezerra Safira.",
+                                responsavel = operador
+                        ),
+                        VacinacaoAnimal(
+                                animal = animal10,
+                                farm = boaVista,
+                                tipo = TipoVacina.IBR_BVD,
+                                nomeVacina = "Repro Shield",
+                                dose = BigDecimal("5.00"),
+                                unidadeMedida = "mL",
+                                aplicadaEm = hoje.minusDays(43),
+                                proximaDoseEm = hoje.plusMonths(6),
+                                fabricante = "VetSaude",
+                                loteVacina = "REP-2026-11",
+                                observacoes = "Cobertura reprodutiva para protocolo IATF.",
+                                responsavel = admin
+                        )
+                )
+        )
+
         movimentacaoAnimalRepository.saveAll(
                 listOf(
                         MovimentacaoAnimal(
@@ -509,6 +765,36 @@ class CompleteSystemSeedRunner(
                                 numeroGta = "GTA-2026-4412",
                                 motivo = "Transferência comercial.",
                                 observacoes = "Saída programada para parceiro de terminação.",
+                                responsavel = admin
+                        )
+                )
+        )
+
+        movimentacaoAnimalRepository.saveAll(
+                listOf(
+                        MovimentacaoAnimal(
+                                animal = animal9,
+                                tipo = TipoMovimentacaoAnimal.ENTRE_LOTES,
+                                farmOrigem = santaHelena,
+                                farmDestino = santaHelena,
+                                pastureOrigem = pastoRecria,
+                                pastureDestino = pastoEngorda,
+                                movimentadaEm = hoje.minusDays(27),
+                                motivo = "Promocao para lote de engorda apos bater meta de recria.",
+                                observacoes = "Ajuste de manejo com lote alvo de terminacao.",
+                                responsavel = operador
+                        ),
+                        MovimentacaoAnimal(
+                                animal = animal11,
+                                tipo = TipoMovimentacaoAnimal.ENTRADA_EXTERNA,
+                                farmOrigem = boaVista,
+                                farmDestino = boaVista,
+                                pastureOrigem = null,
+                                pastureDestino = pastoQuarentena,
+                                movimentadaEm = hoje.minusDays(11),
+                                numeroGta = "GTA-2026-7721",
+                                motivo = "Entrada de compra para recria monitorada.",
+                                observacoes = "Animal recebido com conferencia documental e inspeção clinica.",
                                 responsavel = admin
                         )
                 )
@@ -570,6 +856,102 @@ class CompleteSystemSeedRunner(
                 )
         )
 
+        despesaRepository.saveAll(
+                listOf(
+                        Despesa(
+                                farm = santaHelena,
+                                categoria = CategoriaDespesa.REPRODUCAO,
+                                descricao = "Protocolo hormonal das matrizes elite",
+                                valor = BigDecimal("2140.00"),
+                                data = hoje.minusDays(41),
+                                formaPagamento = FormaPagamento.CARTAO_CREDITO,
+                                dataVencimento = hoje.minusDays(35),
+                                dataLiquidacao = hoje.minusDays(34),
+                                status = StatusLancamentoFinanceiro.PAGO,
+                                lote = loteElite,
+                                responsavel = admin,
+                                observacoes = "Investimento em IATF e manejo reprodutivo premium."
+                        ),
+                        Despesa(
+                                farm = boaVista,
+                                categoria = CategoriaDespesa.ALIMENTACAO,
+                                descricao = "Silagem e suplemento mineral da reserva seca",
+                                valor = BigDecimal("3180.00"),
+                                data = hoje.minusDays(6),
+                                formaPagamento = FormaPagamento.BOLETO,
+                                dataVencimento = hoje.plusDays(7),
+                                status = StatusLancamentoFinanceiro.PENDENTE,
+                                lote = loteReserva,
+                                responsavel = operador,
+                                observacoes = "Reposicao antecipada para janela seca."
+                        )
+                )
+        )
+
+        receitaRepository.saveAll(
+                listOf(
+                        Receita(
+                                farm = santaHelena,
+                                tipo = TipoReceita.VENDA_ANIMAL,
+                                descricao = "Venda individual do lote premium para frigorifico regional",
+                                valor = BigDecimal("12480.00"),
+                                data = hoje.minusDays(13),
+                                dataVencimento = hoje.minusDays(11),
+                                dataLiquidacao = hoje.minusDays(10),
+                                formaPagamento = FormaPagamento.PIX,
+                                status = StatusLancamentoFinanceiro.RECEBIDO,
+                                animal = animal3,
+                                responsavel = admin,
+                                comprador = "Frigorifico Serra Dourada",
+                                quantidadeAnimais = 1,
+                                observacoes = "Margem acima da meta prevista para o ciclo."
+                        ),
+                        Receita(
+                                farm = santaHelena,
+                                tipo = TipoReceita.BONIFICACAO,
+                                descricao = "Bonificacao por qualidade de carcaca e padrao de entrega",
+                                valor = BigDecimal("1860.00"),
+                                data = hoje.minusDays(9),
+                                dataVencimento = hoje.minusDays(7),
+                                dataLiquidacao = hoje.minusDays(7),
+                                formaPagamento = FormaPagamento.TRANSFERENCIA,
+                                status = StatusLancamentoFinanceiro.RECEBIDO,
+                                lote = loteEngorda,
+                                responsavel = admin,
+                                comprador = "Frigorifico Serra Dourada",
+                                observacoes = "Premio comercial vinculado ao fechamento de lote."
+                        ),
+                        Receita(
+                                farm = boaVista,
+                                tipo = TipoReceita.VENDA_LOTE,
+                                descricao = "Venda parcial de lote de apoio para parceiro de recria",
+                                valor = BigDecimal("28650.00"),
+                                data = hoje.minusDays(4),
+                                dataVencimento = hoje.plusDays(3),
+                                formaPagamento = FormaPagamento.BOLETO,
+                                status = StatusLancamentoFinanceiro.PENDENTE,
+                                lote = loteReserva,
+                                responsavel = admin,
+                                comprador = "Agropecuaria Horizonte",
+                                quantidadeAnimais = 6,
+                                observacoes = "Titulo ainda em aberto para demonstracao de contas a receber."
+                        ),
+                        Receita(
+                                farm = boaVista,
+                                tipo = TipoReceita.PRESTACAO_SERVICO,
+                                descricao = "Prestacao de servico de suporte sanitario e quarentena",
+                                valor = BigDecimal("4200.00"),
+                                data = hoje.minusDays(2),
+                                dataVencimento = hoje.plusDays(12),
+                                formaPagamento = FormaPagamento.TRANSFERENCIA,
+                                status = StatusLancamentoFinanceiro.PENDENTE,
+                                responsavel = admin,
+                                comprador = "Fazenda Parceira Vale Verde",
+                                observacoes = "Receita recorrente de apoio operacional entre propriedades."
+                        )
+                )
+        )
+
         alertaRepository.saveAll(
                 listOf(
                         Alerta(
@@ -603,17 +985,42 @@ class CompleteSystemSeedRunner(
                 )
         )
 
+        alertaRepository.saveAll(
+                listOf(
+                        Alerta(
+                                farm = santaHelena,
+                                tipo = TipoAlerta.RECOMENDACAO_VENDA,
+                                prioridade = PrioridadeAlerta.MEDIA,
+                                titulo = "Falcao acima da curva media de engorda",
+                                mensagem = "O animal Falcao vem sustentando GMD acima da media do lote nas ultimas semanas.",
+                                animal = animal9,
+                                recomendacao = "Usar o animal como referencia para estrategia nutricional do lote.",
+                                status = StatusAlerta.ATIVO
+                        ),
+                        Alerta(
+                                farm = boaVista,
+                                tipo = TipoAlerta.SEM_PESAGEM_RECENTE,
+                                prioridade = PrioridadeAlerta.MEDIA,
+                                titulo = "Atualizar peso da novilha Gaia",
+                                mensagem = "A novilha Gaia precisa de nova pesagem para manter a curva produtiva atualizada.",
+                                animal = animal12,
+                                recomendacao = "Agendar passagem no curral na proxima rodada operacional.",
+                                status = StatusAlerta.ATIVO
+                        )
+                )
+        )
+
         val assinatura = assinaturaRepository.save(
                 Assinatura(
                         empresa = empresa,
-                        tipo = TipoAssinatura.BASIC,
+                        tipo = TipoAssinatura.PREMIUM,
                         status = StatusAssinatura.ATIVA,
                         periodoPagamento = PeriodoPagamento.MENSAL,
                         dataInicio = agora.minusMonths(2),
                         dataVencimento = agora.plusDays(18),
                         proximaCobranca = agora.plusDays(18),
-                        valor = BigDecimal("79.00"),
-                        asaasSubscriptionId = "sub_demo_basic_001"
+                        valor = BigDecimal("349.00"),
+                        asaasSubscriptionId = "sub_demo_premium_001"
                 )
         )
 
@@ -621,34 +1028,34 @@ class CompleteSystemSeedRunner(
                 listOf(
                         Pagamento(
                                 assinatura = assinatura,
-                                valor = BigDecimal("79.00"),
+                                valor = BigDecimal("349.00"),
                                 dataVencimento = agora.minusDays(42),
                                 dataPagamento = agora.minusDays(40),
                                 status = StatusPagamento.PAGO,
                                 metodoPagamento = MetodoPagamento.PIX,
                                 transacaoId = "pay_demo_001_pago",
                                 gatewayProvider = "asaas-demo",
-                                asaasSubscriptionId = "sub_demo_basic_001",
+                                asaasSubscriptionId = "sub_demo_premium_001",
                                 invoiceUrl = "https://demo.bovcore.local/faturas/001",
                                 pixPayload = "00020126580014BR.GOV.BCB.PIX0114bovcore-demo520400005303986540679.005802BR5925BOVCORE DEMO AGRO6009SAO PAULO62070503***6304ABCD"
                         ),
                         Pagamento(
                                 assinatura = assinatura,
-                                valor = BigDecimal("79.00"),
+                                valor = BigDecimal("349.00"),
                                 dataVencimento = agora.minusDays(12),
                                 dataPagamento = agora.minusDays(10),
                                 status = StatusPagamento.PAGO,
                                 metodoPagamento = MetodoPagamento.PIX,
                                 transacaoId = "pay_demo_002_pago",
                                 gatewayProvider = "asaas-demo",
-                                asaasSubscriptionId = "sub_demo_basic_001",
+                                asaasSubscriptionId = "sub_demo_premium_001",
                                 invoiceUrl = "https://demo.bovcore.local/faturas/002",
                                 pixPayload = "00020126580014BR.GOV.BCB.PIX0114bovcore-demo520400005303986540679.005802BR5925BOVCORE DEMO AGRO6009SAO PAULO62070503***6304EFGH"
                         )
                 )
         )
 
-        logger.info("Seed completo BovCore criado com sucesso.")
+        logger.info("Seed showroom BovCore criado com sucesso.")
         logger.info("Login demo: {} / bovcore123", adminEmail)
         logger.info("Login operação: operacao@bovcore.com.br / bovcore123")
     }
@@ -679,24 +1086,24 @@ class CompleteSystemSeedRunner(
                 ?: assinaturaRepository.save(
                         Assinatura(
                                 empresa = empresa,
-                                tipo = TipoAssinatura.BASIC,
+                                tipo = TipoAssinatura.PREMIUM,
                                 status = StatusAssinatura.ATIVA,
                                 periodoPagamento = PeriodoPagamento.MENSAL,
                                 dataInicio = agora.minusMonths(2),
                                 dataVencimento = agora.plusDays(18),
                                 proximaCobranca = agora.plusDays(18),
-                                valor = BigDecimal("79.00"),
-                                asaasSubscriptionId = "sub_demo_basic_001"
+                                valor = BigDecimal("349.00"),
+                                asaasSubscriptionId = "sub_demo_premium_001"
                         )
                 )
 
-        assinatura.tipo = TipoAssinatura.BASIC
+        assinatura.tipo = TipoAssinatura.PREMIUM
         assinatura.status = StatusAssinatura.ATIVA
         assinatura.periodoPagamento = PeriodoPagamento.MENSAL
         assinatura.dataVencimento = agora.plusDays(18)
         assinatura.proximaCobranca = agora.plusDays(18)
-        assinatura.valor = BigDecimal("79.00")
-        assinatura.asaasSubscriptionId = assinatura.asaasSubscriptionId ?: "sub_demo_basic_001"
+        assinatura.valor = BigDecimal("349.00")
+        assinatura.asaasSubscriptionId = assinatura.asaasSubscriptionId ?: "sub_demo_premium_001"
         assinaturaRepository.save(assinatura)
 
         val pagamentosExistentes = pagamentoRepository.findByAssinaturaEmpresaIdOrderByDataVencimentoDesc(empresa.id!!)
@@ -708,7 +1115,7 @@ class CompleteSystemSeedRunner(
                 listOf(
                         Pagamento(
                                 assinatura = assinatura,
-                                valor = BigDecimal("79.00"),
+                                valor = BigDecimal("349.00"),
                                 dataVencimento = agora.minusDays(42),
                                 dataPagamento = agora.minusDays(40),
                                 status = StatusPagamento.PAGO,
@@ -720,7 +1127,7 @@ class CompleteSystemSeedRunner(
                         ),
                         Pagamento(
                                 assinatura = assinatura,
-                                valor = BigDecimal("79.00"),
+                                valor = BigDecimal("349.00"),
                                 dataVencimento = agora.minusDays(12),
                                 dataPagamento = agora.minusDays(10),
                                 status = StatusPagamento.PAGO,

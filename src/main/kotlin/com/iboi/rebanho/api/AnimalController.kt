@@ -9,8 +9,10 @@ import com.iboi.rebanho.api.dto.CadastrarAnimalRequest
 import com.iboi.rebanho.api.dto.FiltrarAnimaisRequest
 import com.iboi.rebanho.api.dto.ImportarAnimaisResponse
 import com.iboi.rebanho.api.dto.MovimentacaoAnimalDto
+import com.iboi.rebanho.api.dto.MovimentacaoLoteResultadoDto
 import com.iboi.rebanho.api.dto.PesagemAnimalDto
 import com.iboi.rebanho.api.dto.RegistrarMovimentacaoAnimalRequest
+import com.iboi.rebanho.api.dto.RegistrarMovimentacaoLoteRequest
 import com.iboi.rebanho.api.dto.RegistrarVacinacaoAnimalRequest
 import com.iboi.rebanho.api.dto.VacinacaoAnimalDto
 import com.iboi.rebanho.domain.CategoriaAnimal
@@ -27,6 +29,7 @@ import com.iboi.rebanho.usecase.ListarMovimentacoesAnimalUseCase
 import com.iboi.rebanho.usecase.ListarPesagensAnimalUseCase
 import com.iboi.rebanho.usecase.ListarVacinacoesAnimalUseCase
 import com.iboi.rebanho.usecase.RegistrarMovimentacaoAnimalUseCase
+import com.iboi.rebanho.usecase.RegistrarMovimentacaoLoteUseCase
 import com.iboi.rebanho.usecase.RegistrarVacinacaoAnimalUseCase
 import com.iboi.shared.security.SecurityUtils
 import io.swagger.v3.oas.annotations.Operation
@@ -65,6 +68,7 @@ class AnimalController(
         private val deletarAnimalUseCase: DeletarAnimalUseCase,
         private val importarAnimaisCsvUseCase: ImportarAnimaisCsvUseCase,
         private val registrarMovimentacaoAnimalUseCase: RegistrarMovimentacaoAnimalUseCase,
+        private val registrarMovimentacaoLoteUseCase: RegistrarMovimentacaoLoteUseCase,
         private val listarMovimentacoesAnimalUseCase: ListarMovimentacoesAnimalUseCase,
         private val listarPesagensAnimalUseCase: ListarPesagensAnimalUseCase,
         private val registrarVacinacaoAnimalUseCase: RegistrarVacinacaoAnimalUseCase,
@@ -145,6 +149,24 @@ class AnimalController(
                 request
         )
         return ResponseEntity.status(HttpStatus.CREATED).body(movimentacao)
+    }
+
+    @PostMapping("/movimentacoes-em-lote")
+    @Operation(summary = "Registrar movimentacao em lote", description = "Aplica movimentacao em massa para varios animais do lote com fluxo otimizado para campo")
+    fun registrarMovimentacaoEmLote(
+            @Valid @RequestBody request: RegistrarMovimentacaoLoteRequest
+    ): ResponseEntity<MovimentacaoLoteResultadoDto> {
+        planoAcessoService.requireRecurso(
+                SecurityUtils.currentEmpresaId(),
+                PlanoRecurso.MOVIMENTACAO,
+                "Movimentacao de animais faz parte do plano Basic ou superior."
+        )
+        val resultado = registrarMovimentacaoLoteUseCase.execute(
+                SecurityUtils.currentFarmId(),
+                SecurityUtils.currentEmail(),
+                request
+        )
+        return ResponseEntity.status(HttpStatus.CREATED).body(resultado)
     }
 
     @GetMapping("/{id}/movimentacoes")

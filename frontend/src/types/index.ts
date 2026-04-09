@@ -527,6 +527,7 @@ export interface ImportarAnimaisResponse {
 }
 
 export type TipoMovimentacaoAnimal =
+  | 'ENTRE_LOTES'
   | 'ENTRE_PASTOS'
   | 'ENTRE_FAZENDAS'
   | 'SAIDA_EXTERNA'
@@ -561,10 +562,53 @@ export interface RegistrarMovimentacaoAnimalRequest {
   movimentadaEm: string;
   destinoFarmId?: string;
   destinoPastureId?: string;
+  destinoLoteId?: string;
   numeroGta?: string;
   documentoExterno?: string;
   motivo?: string;
   observacoes?: string;
+}
+
+export interface RegistrarMovimentacaoLoteRequest {
+  loteOrigemId?: string;
+  animalIds: string[];
+  tipo: TipoMovimentacaoAnimal;
+  movimentadaEm: string;
+  destinoFarmId?: string;
+  destinoPastureId?: string;
+  destinoLoteId?: string;
+  numeroGta?: string;
+  documentoExterno?: string;
+  motivo?: string;
+  observacoes?: string;
+}
+
+export interface MovimentacaoLoteResultadoDto {
+  totalAnimais: number;
+  tipo: TipoMovimentacaoAnimal;
+  movimentadaEm: string;
+  loteOrigem?: {
+    id: string;
+    nome: string;
+  };
+  loteDestino?: {
+    id: string;
+    nome: string;
+  };
+  farmDestino?: {
+    id: string;
+    nome: string;
+  };
+  pastureDestino?: {
+    id: string;
+    nome: string;
+  };
+  animais: {
+    id: string;
+    brinco: string;
+    nome?: string;
+  }[];
+  movimentacoes: MovimentacaoAnimalDto[];
 }
 
 export interface VacinacaoAnimalDto {
@@ -732,7 +776,7 @@ export interface LoteDto {
   ativo: boolean;
   quantidadeAnimais: number;
   pesoMedioAtual?: number;
-  gmdMedio30Dias?: number;
+  gmdPorJanela: GmdJanelaDto[];
   criadoEm: string;
 }
 
