@@ -227,6 +227,21 @@ export default function Lotes() {
                 </span>
               </div>
 
+              <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+                <div className="rounded-xl bg-emerald-50 px-3 py-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-700">Peso medio</p>
+                  <p className="mt-1 font-semibold text-gray-900">
+                    {lote.pesoMedioAtual == null ? '-' : `${Number(lote.pesoMedioAtual).toFixed(1)} kg`}
+                  </p>
+                </div>
+                <div className="rounded-xl bg-blue-50 px-3 py-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-blue-700">GMD 30d</p>
+                  <p className="mt-1 font-semibold text-gray-900">
+                    {lote.gmdMedio30Dias == null ? '-' : `${Number(lote.gmdMedio30Dias).toFixed(3)} kg/d`}
+                  </p>
+                </div>
+              </div>
+
               <p className="text-xs text-gray-500 mt-2">
                 Criado em {new Date(lote.criadoEm).toLocaleDateString('pt-BR')}
               </p>

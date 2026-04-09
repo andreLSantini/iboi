@@ -1,5 +1,6 @@
 package com.iboi.relatorio.dto
 
+import com.iboi.rebanho.api.dto.GmdJanelaDto
 import com.iboi.rebanho.domain.CategoriaAnimal
 import com.iboi.rebanho.domain.Sexo
 import com.iboi.rebanho.domain.StatusAnimal
@@ -14,7 +15,8 @@ data class RelatorioRebanhoResponse(
         val porSexo: Map<Sexo, Long>,
         val porStatus: Map<StatusAnimal, Long>,
         val idadeMediaMeses: Int,
-        val pesoMedio: BigDecimal?
+        val pesoMedio: BigDecimal?,
+        val gmdPorJanela: List<GmdJanelaDto>
 )
 
 // Relatório Financeiro

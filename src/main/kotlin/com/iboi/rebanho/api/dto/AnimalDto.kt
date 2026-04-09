@@ -223,6 +223,7 @@ data class VacinacaoAnimalDto(
 data class AnimalFichaCompletaDto(
         val animal: AnimalDto,
         val pesagens: List<PesagemAnimalDto>,
+        val gmdPorJanela: List<GmdJanelaDto>,
         val eventos: List<EventoDto>,
         val eventosReprodutivos: List<EventoDto>,
         val vacinacoes: List<VacinacaoAnimalDto>,
@@ -239,6 +240,17 @@ data class PesagemAnimalDto(
         val ganhoMedioDiario: BigDecimal? = null,
         val observacao: String? = null,
         val responsavel: String? = null
+)
+
+data class GmdJanelaDto(
+        val janelaDias: Int,
+        val pesoInicial: BigDecimal?,
+        val pesoFinal: BigDecimal?,
+        val dataInicial: LocalDate?,
+        val dataFinal: LocalDate?,
+        val diasConsiderados: Long?,
+        val variacaoPeso: BigDecimal?,
+        val ganhoMedioDiario: BigDecimal?
 )
 
 fun calcularGanhoMedioDiario(variacaoPeso: BigDecimal, dias: Long): BigDecimal? {

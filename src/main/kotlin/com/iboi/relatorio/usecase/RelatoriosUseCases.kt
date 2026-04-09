@@ -1,6 +1,7 @@
 package com.iboi.relatorio.usecase
 
 import com.iboi.financeiro.repository.DespesaRepository
+import com.iboi.rebanho.api.dto.GmdJanelaDto
 import com.iboi.rebanho.domain.*
 import com.iboi.rebanho.repository.AnimalRepository
 import com.iboi.rebanho.repository.EventoRepository
@@ -16,7 +17,8 @@ import java.util.*
 
 @Component
 class RelatorioRebanhoUseCase(
-        private val animalRepository: AnimalRepository
+        private val animalRepository: AnimalRepository,
+        private val eventoRepository: EventoRepository
 ) {
     fun execute(farmId: UUID): RelatorioRebanhoResponse {
         val animais = animalRepository.findByFarmId(farmId)
@@ -36,13 +38,49 @@ class RelatorioRebanhoUseCase(
                     .divide(BigDecimal(pesos.size), 2, RoundingMode.HALF_UP)
         } else null
 
+        val gmdPorJanela = listOf(30, 60, 90).map { janela ->
+            val gmds = mutableListOf<BigDecimal>()
+
+            animais.forEach { animal ->
+                val pesagens = eventoRepository.findByAnimalIdAndTipo(animal.id!!, TipoEvento.PESAGEM)
+                        .filter { it.peso != null }
+                        .sortedBy { it.data }
+
+                val ultima = pesagens.lastOrNull() ?: return@forEach
+                val dataCorte = ultima.data.minusDays(janela.toLong())
+                val base = pesagens.filter { !it.data.isBefore(dataCorte) }.minByOrNull { it.data } ?: pesagens.firstOrNull()
+                if (base == null || base.id == ultima.id) return@forEach
+
+                val dias = java.time.temporal.ChronoUnit.DAYS.between(base.data, ultima.data)
+                if (dias <= 0) return@forEach
+
+                val variacao = ultima.peso!!.subtract(base.peso)
+                gmds.add(variacao.divide(BigDecimal.valueOf(dias), 3, RoundingMode.HALF_UP))
+            }
+
+            GmdJanelaDto(
+                    janelaDias = janela,
+                    pesoInicial = null,
+                    pesoFinal = null,
+                    dataInicial = null,
+                    dataFinal = null,
+                    diasConsiderados = null,
+                    variacaoPeso = null,
+                    ganhoMedioDiario = if (gmds.isNotEmpty()) {
+                        gmds.reduce(BigDecimal::add)
+                                .divide(BigDecimal(gmds.size), 3, RoundingMode.HALF_UP)
+                    } else null
+            )
+        }
+
         return RelatorioRebanhoResponse(
                 totalAnimais = animais.size.toLong(),
                 porCategoria = porCategoria,
                 porSexo = porSexo,
                 porStatus = porStatus,
                 idadeMediaMeses = idadeMedia,
-                pesoMedio = pesoMedio
+                pesoMedio = pesoMedio,
+                gmdPorJanela = gmdPorJanela
         )
     }
 }

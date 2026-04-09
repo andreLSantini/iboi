@@ -12,7 +12,8 @@ import java.util.*
 @Component
 class ListarLotesUseCase(
         private val loteRepository: LoteRepository,
-        private val animalRepository: AnimalRepository
+        private val animalRepository: AnimalRepository,
+        private val calcularIndicadoresLoteUseCase: CalcularIndicadoresLoteUseCase
 ) {
 
     fun execute(farmId: UUID, apenasAtivos: Boolean?, pageable: Pageable): Page<LoteDto> {
@@ -27,6 +28,7 @@ class ListarLotesUseCase(
 
     private fun toDto(lote: Lote): LoteDto {
         val quantidade = animalRepository.findByLoteId(lote.id!!).size
+        val indicadores = calcularIndicadoresLoteUseCase.execute(lote.id)
 
         return LoteDto(
                 id = lote.id!!,
@@ -34,6 +36,8 @@ class ListarLotesUseCase(
                 descricao = lote.descricao,
                 ativo = lote.ativo,
                 quantidadeAnimais = quantidade,
+                pesoMedioAtual = indicadores.pesoMedioAtual,
+                gmdPorJanela = indicadores.gmdPorJanela,
                 criadoEm = lote.criadoEm
         )
     }

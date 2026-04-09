@@ -2,6 +2,7 @@ package com.iboi.rebanho.api.dto
 
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
+import java.math.BigDecimal
 import java.time.LocalDateTime
 import java.util.*
 
@@ -30,5 +31,7 @@ data class LoteDto(
         val descricao: String?,
         val ativo: Boolean,
         val quantidadeAnimais: Int,
+        val pesoMedioAtual: BigDecimal?,
+        val gmdPorJanela: List<GmdJanelaDto>,
         val criadoEm: LocalDateTime
 )

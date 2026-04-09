@@ -85,6 +85,8 @@ export default function Relatorios() {
     },
   ];
 
+  const gmdCards = rebanho?.gmdPorJanela ?? [];
+
   async function exportarPdfFazenda() {
     try {
       setExporting(true);
@@ -156,6 +158,18 @@ export default function Relatorios() {
             </div>
           );
         })}
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        {gmdCards.map((janela) => (
+          <div key={janela.janelaDias} className="card">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">GMD {janela.janelaDias} dias</p>
+            <p className="mt-2 text-2xl font-bold text-gray-900">
+              {janela.ganhoMedioDiario == null ? '-' : `${Number(janela.ganhoMedioDiario).toFixed(3)} kg/dia`}
+            </p>
+            <p className="mt-1 text-xs text-gray-500">Media consolidada dos animais com base suficiente na janela.</p>
+          </div>
+        ))}
       </div>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.2fr_0.8fr]">

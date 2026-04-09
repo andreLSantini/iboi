@@ -15,7 +15,8 @@ import java.util.*
 @Component
 class AtualizarLoteUseCase(
         private val loteRepository: LoteRepository,
-        private val animalRepository: AnimalRepository
+        private val animalRepository: AnimalRepository,
+        private val calcularIndicadoresLoteUseCase: CalcularIndicadoresLoteUseCase
 ) {
 
     @Transactional
@@ -44,6 +45,7 @@ class AtualizarLoteUseCase(
 
     private fun toDto(lote: Lote): LoteDto {
         val quantidade = animalRepository.findByLoteId(lote.id!!).size
+        val indicadores = calcularIndicadoresLoteUseCase.execute(lote.id)
 
         return LoteDto(
                 id = lote.id!!,
@@ -51,6 +53,8 @@ class AtualizarLoteUseCase(
                 descricao = lote.descricao,
                 ativo = lote.ativo,
                 quantidadeAnimais = quantidade,
+                pesoMedioAtual = indicadores.pesoMedioAtual,
+                gmdPorJanela = indicadores.gmdPorJanela,
                 criadoEm = lote.criadoEm
         )
     }

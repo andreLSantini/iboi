@@ -380,6 +380,7 @@ export interface RelatorioRebanhoResponse {
   porStatus: Record<string, number>;
   idadeMediaMeses: number;
   pesoMedio?: number | null;
+  gmdPorJanela: GmdJanelaDto[];
 }
 
 export type PrioridadeAlerta = 'BAIXA' | 'MEDIA' | 'ALTA' | 'CRITICA';
@@ -640,6 +641,7 @@ export interface EventoDto {
 export interface AnimalFichaCompletaDto {
   animal: AnimalDto;
   pesagens: PesagemAnimalDto[];
+  gmdPorJanela: GmdJanelaDto[];
   eventos: EventoDto[];
   eventosReprodutivos: EventoDto[];
   vacinacoes: VacinacaoAnimalDto[];
@@ -656,6 +658,17 @@ export interface PesagemAnimalDto {
   ganhoMedioDiario?: number | null;
   observacao?: string;
   responsavel?: string;
+}
+
+export interface GmdJanelaDto {
+  janelaDias: number;
+  pesoInicial?: number;
+  pesoFinal?: number;
+  dataInicial?: string;
+  dataFinal?: string;
+  diasConsiderados?: number;
+  variacaoPeso?: number;
+  ganhoMedioDiario?: number;
 }
 
 export type CategoriaAgenda = 'SANITARIO' | 'PESAGEM' | 'REPRODUCAO';
@@ -718,6 +731,8 @@ export interface LoteDto {
   descricao?: string;
   ativo: boolean;
   quantidadeAnimais: number;
+  pesoMedioAtual?: number;
+  gmdMedio30Dias?: number;
   criadoEm: string;
 }
 

@@ -16,6 +16,7 @@ import java.util.UUID
 class BuscarFichaCompletaAnimalUseCase(
         private val animalRepository: AnimalRepository,
         private val listarPesagensAnimalUseCase: ListarPesagensAnimalUseCase,
+        private val calcularGmdPorJanelaUseCase: CalcularGmdPorJanelaUseCase,
         private val eventoRepository: EventoRepository,
         private val vacinacaoAnimalRepository: VacinacaoAnimalRepository,
         private val movimentacaoAnimalRepository: MovimentacaoAnimalRepository
@@ -32,6 +33,7 @@ class BuscarFichaCompletaAnimalUseCase(
         return AnimalFichaCompletaDto(
                 animal = animal.toDto(),
                 pesagens = listarPesagensAnimalUseCase.execute(animalId, farmId),
+                gmdPorJanela = calcularGmdPorJanelaUseCase.execute(animalId),
                 eventos = eventoRepository.findByAnimalIdOrderByDataDesc(animalId).map { it.toDto() },
                 eventosReprodutivos = eventoRepository.findByAnimalIdOrderByDataDesc(animalId)
                         .filter {

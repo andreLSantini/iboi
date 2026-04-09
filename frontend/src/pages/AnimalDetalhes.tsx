@@ -25,6 +25,7 @@ import type {
   CategoriaAnimal,
   EventoDto,
   FarmSummary,
+  GmdJanelaDto,
   LoteDto,
   MovimentacaoAnimalDto,
   OrigemAnimal,
@@ -186,6 +187,7 @@ export default function AnimalDetalhes() {
 
   const [animal, setAnimal] = useState<AnimalDto | null>(null);
   const [pesagens, setPesagens] = useState<PesagemAnimalDto[]>([]);
+  const [gmdPorJanela, setGmdPorJanela] = useState<GmdJanelaDto[]>([]);
   const [eventos, setEventos] = useState<EventoDto[]>([]);
   const [eventosReprodutivos, setEventosReprodutivos] = useState<EventoDto[]>([]);
   const [vacinacoes, setVacinacoes] = useState<VacinacaoAnimalDto[]>([]);
@@ -268,6 +270,7 @@ export default function AnimalDetalhes() {
 
       setAnimal(animalData);
       setPesagens(Array.isArray(fichaCompleta.pesagens) ? fichaCompleta.pesagens : []);
+      setGmdPorJanela(Array.isArray(fichaCompleta.gmdPorJanela) ? fichaCompleta.gmdPorJanela : []);
       setEventos(Array.isArray(fichaCompleta.eventos) ? fichaCompleta.eventos : []);
       setEventosReprodutivos(Array.isArray(fichaCompleta.eventosReprodutivos) ? fichaCompleta.eventosReprodutivos : []);
       setVacinacoes(Array.isArray(fichaCompleta.vacinacoes) ? fichaCompleta.vacinacoes : []);
@@ -373,6 +376,7 @@ export default function AnimalDetalhes() {
 
   const quickInsights = useMemo(() => {
     if (!animal) return [];
+    const janela30 = gmdPorJanela.find((item) => item.janelaDias === 30);
     return [
       {
         title: animal.pasture ? 'Animal localizado' : 'Sem localizacao operacional',
@@ -401,11 +405,11 @@ export default function AnimalDetalhes() {
       {
         title: pesagensOrdenadas.length > 1 ? 'Base produtiva disponivel' : 'Pouca base produtiva',
         description: pesagensOrdenadas.length > 1
-          ? `Curva de peso com ${pesagensOrdenadas.length} pontos e GMD estimado em ${ganhoPesoMedio} kg/dia.`
+          ? `Curva de peso com ${pesagensOrdenadas.length} pontos, GMD consolidado em ${ganhoPesoMedio} kg/dia${janela30?.ganhoMedioDiario != null ? ` e janela de 30 dias em ${Number(janela30.ganhoMedioDiario).toFixed(3)} kg/dia.` : '.'}`
           : 'Registre mais pesagens para liberar analises de ganho e desempenho.',
       },
     ];
-  }, [animal, vacinacoes.length, eventosReprodutivos.length, pesagensOrdenadas.length, ganhoPesoMedio]);
+  }, [animal, vacinacoes.length, eventosReprodutivos.length, pesagensOrdenadas.length, ganhoPesoMedio, gmdPorJanela]);
 
   const resumoReprodutivo = useMemo(() => {
     const ultimaCobertura = eventosReprodutivos.find((evento) => evento.tipo === 'COBERTURA' || evento.tipo === 'INSEMINACAO');
@@ -899,6 +903,23 @@ export default function AnimalDetalhes() {
               <TrendingUp className="h-5 w-5 text-emerald-600" />
               <h2 className="text-xl font-bold text-gray-900">Curva de peso</h2>
             </div>
+            {gmdPorJanela.length > 0 && (
+              <div className="mb-6 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+                {gmdPorJanela.map((janela) => (
+                  <div key={janela.janelaDias} className="rounded-2xl border border-emerald-100 bg-emerald-50/60 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700">GMD {janela.janelaDias}d</p>
+                    <p className="mt-2 text-lg font-bold text-gray-900">
+                      {janela.ganhoMedioDiario == null ? '-' : `${Number(janela.ganhoMedioDiario).toFixed(3)} kg/dia`}
+                    </p>
+                    <p className="mt-1 text-xs text-gray-500">
+                      {janela.diasConsiderados == null
+                        ? 'Sem base suficiente'
+                        : `${janela.diasConsiderados} dias • ${janela.variacaoPeso == null ? '-' : `${Number(janela.variacaoPeso).toFixed(2)} kg`}`}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
             <WeightCurve pesagens={pesagensOrdenadas} />
             {pesagens.length > 0 && (
               <div className="mt-6 overflow-hidden rounded-2xl border border-gray-100">
